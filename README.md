@@ -26,8 +26,10 @@ The rules are written up in the Google Doc **"RPG Base line"**. The Doc is the s
 
 ## How changes are made
 
-1. A change is described in plain English (for example "make Sleep last 3 turns").
-2. Claude makes it on its own branch, bumps the build number, runs the checks and opens a **pull request** describing what changed and why.
-3. Paul reviews it and clicks **Merge**. The website updates within a minute or two.
+1. Paul, or a collaborator such as Tom, describes a change to their own Claude in plain English (for example "make Sleep last 3 turns").
+2. Claude makes it on its own branch, bumps the build number, runs the checks and publishes a playable preview. It then opens a **pull request** describing what changed and why, with the preview link.
+3. Paul reviews it and clicks **Merge**, and the website updates within a minute or two. Or he closes it, and the change stays saved on its branch without touching the game.
+
+Collaborators' Claude never edits the rules Doc. Any rule change they propose is listed in the pull request for Paul to approve.
 
 Every build is in [CHANGELOG.md](CHANGELOG.md), and every change can be seen line by line in the repository's history.
