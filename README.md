@@ -19,6 +19,7 @@ Nothing to install. It runs in any modern browser on a computer or phone. Each p
 | `audio/` | Music and sound effects. |
 | `tests/check.py` | Automatic checks run before every change. |
 | `tools/build.py` | Bundles everything into one page for the Claude preview. |
+| `docs/` | The Player Booklet (`Player Booklet.pdf`) and the script that builds it from the game's data (`docs/booklet/`). |
 
 ## Rules
 

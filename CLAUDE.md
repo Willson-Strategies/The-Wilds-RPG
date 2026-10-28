@@ -8,6 +8,7 @@ Others can work on the game through their own Claude (for example Tom, the envir
 ## Sources of truth
 - **Rules:** the Google Doc "RPG Base line" (document ID `1fgjoYGUvLNO1Bpd_QkZl6RZtv53xsp7eQ6piq47E7lI`), owned by Paul.
 - **Numbers:** classes, monsters and weapons in `data/game-data.js` mirror Paul's rules Sheet.
+- **Player Booklet:** `docs/Player Booklet.pdf`, a 10-page player handout (class pages, spellbooks, shops and services). It is built from the game's own data by `python3 docs/booklet/build.py`: the words are in that script, the level 10 class figures in `docs/booklet/class-figures.json`.
 - **Paul's Claude preview:** the artifact at https://claude.ai/artifact/EmnebteMJBxZs6VJJmHbKK (a single page built by `tools/build.py`). It is in Paul's Claude account; only Paul's Claude can update it.
 - **Public site:** GitHub Pages, served from `main` at https://willson-strategies.github.io/The-Wilds-RPG/
 
@@ -20,7 +21,7 @@ Others can work on the game through their own Claude (for example Tom, the envir
 ## For every change
 1. Branch from an up-to-date `main`: `build-<N>-<short-name>`, where N is the next build number. Before starting, check the open pull requests: if another one already uses that number, take the next free one.
 2. Bump `const BUILD` in `js/version.js` to N. Changes that don't touch the game itself (these instructions, the README, tests or tools) get no build number: name the branch `repo-<short-name>`, leave `js/version.js` alone and skip the CHANGELOG.
-3. Make the change. Keep the existing style: compact code, short comments explaining why.
+3. Make the change. Keep the existing style: compact code, short comments explaining why. If it changes anything the Player Booklet shows (weapons, armour, spells, prices, spellbook slots, class dice or abilities), fix any words in `docs/booklet/build.py` that no longer match and rebuild the booklet.
 4. Run the checks on both versions. They need Python's playwright with Chromium:
    - `python3 tests/check.py`
    - `python3 tools/build.py && python3 tests/check.py dist`
