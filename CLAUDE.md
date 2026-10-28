@@ -8,6 +8,7 @@ Others can work on the game through their own Claude (for example Tom, the envir
 ## Sources of truth
 - **Rules:** the Google Doc "RPG Base line" (document ID `1fgjoYGUvLNO1Bpd_QkZl6RZtv53xsp7eQ6piq47E7lI`), owned by Paul.
 - **Numbers:** classes, monsters and weapons in `data/game-data.js` mirror Paul's rules Sheet.
+- **Player Booklet:** `docs/Player Booklet.pdf`, a 10-page player handout (class pages, spellbooks, shops and services). It was made before 15 Oct 2026 and is out of date in places; check it against the game before quoting it.
 - **Paul's Claude preview:** the artifact at https://claude.ai/artifact/EmnebteMJBxZs6VJJmHbKK (a single page built by `tools/build.py`). It is in Paul's Claude account; only Paul's Claude can update it.
 - **Public site:** GitHub Pages, served from `main` at https://willson-strategies.github.io/The-Wilds-RPG/
 
