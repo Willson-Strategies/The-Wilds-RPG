@@ -335,18 +335,21 @@ def svgi(svg, cls=''):
 def sec(title, body, cls=''):
     return f'<section class="blk {cls}"><h2>{title}</h2>{body}</section>'
 
+NO_SPELLS = {'Fighter': 'Fighters cannot cast spells', 'Dwarf': 'Dwarves cannot cast spells', 'Elf': 'Elves may use some magic but start with none',
+             'Thief': 'High level Thieves may use some magic but start with none'}
+
 def start_page(G, n):
     D = G['DATA']
     cards = ''.join(f'''<div class="ccard"><img src="../../art/portraits/{SLUG(c)}.jpg" alt=""><div><b>{c}</b><span>{ROLE[c]}</span><i>{E(TEXT[c]['tag'])}</i></div></div>''' for c in CLASSES)
     def kit(c):
         g = G['STARTING_GEAR'][c]
-        w = [('a trusty ' + x[1:] + ' of their own') if x and x[0] == '*' else x for x in g if x]
+        w = [('A trusty ' + x[1:] + ' of their own') if x and x[0] == '*' else x for x in g if x]
         return ', '.join(w)
-    rows = ''.join(f'''<tr><th>{c}</th><td>{kit(c)}</td><td>{', '.join(G['STARTING_SPELLS'].get(c, [])) or '—'}</td></tr>''' for c in CLASSES)
+    rows = ''.join(f'''<tr><th>{c}</th><td>{kit(c)}</td><td>{', '.join(G['STARTING_SPELLS'].get(c, [])) or NO_SPELLS[c]}</td></tr>''' for c in CLASSES)
     steps = [('Choose a quest slot.', 'You can keep up to five quests going at once, each with its own party. Every quest saves itself as you play and carries on exactly where you left it. There is no going back, so choose with care.'),
              ('Pick four heroes.', 'Any mix of the six classes, and the same class more than once if you like. Give each hero a name.'),
-             ('Fate rolls their stats.', "Each hero's stats are rolled with their class's dice, and there are no rerolls. Switching a hero to another class and back keeps the same rolls."),
-             ('Enter the castle.', "The party sets out with a purse of 5 GP for each hero, plus up to 5 GP more each for a winning way with merchants (Charisma).")]
+             ('Fate rolls their stats.', "Each hero's stats are rolled with their class's dice, and there are no rerolls."),
+             ('Enter the castle.', "The party sets out with a purse of 5 GP or more for each hero.")]
     body = head('How to play', 'Starting the Game', 'Four strangers, one castle, and the wilds beyond') + f'''
 <p class="intro wide"><span class="drop">C</span>reate a party of four adventurers to go and find allies within the strange new land you find yourselves in. The last castle stands at the edge of the wilds. Beyond its walls lie rat-choked roads, haunted woods and worse, and everything out there would happily see you dead.</p>
 <div><h2>Raise your party</h2>
@@ -394,8 +397,8 @@ def stats_page(G, n):
                ('Shooting from range', 'A hero who attacks with a sling or bow keeps their distance until their next turn.', '+2'),
                ('Worn armour', 'Battered or ruined armour and shields protect less (see Wear and repair).', '−1 or −2')]
     does = {'STR': 'Adds to the damage of every weapon blow, melee or ranged.',
-            'DEX': 'Adds to every weapon attack roll, and to AC once it reaches 13.',
-            'CON': 'Adds HP each time the hero levels up. It does not change HP already gained.',
+            'DEX': 'Adds to every weapon attack roll, and to AC.',
+            'CON': 'Adds bonus HP upon level up.',
             'WIS': "Adds to every healing spell. The Elf and Thief add half.",
             'INT': "Adds to every damage spell (the Elf and Thief add half, and Fireball half again), and each point adds 1% to the chance of Sleep and Entangle.",
             'CHA': 'Adds up to 5 GP to the starting purse. In time it will also sway shop prices and encounters.'}
@@ -404,7 +407,7 @@ def stats_page(G, n):
     sg = lambda v: f'+{v}' if v else '+0'
     brows = ''.join(f'''<tr><th>{b['a'] if b['a'] == b['b'] else f"{b['a']}–{b['b']}"}</th><td>{sg(b['str'])}</td><td>{sg(b['hit'])}</td><td>{sg(b['ac'])}</td><td>{b['con']}</td><td>{b['wis']}</td><td>{b['int']}</td></tr>''' for b in G['BANDS'])
     body = head('Your heroes', 'Player Stats', 'Steel, sinew, wits and nerve') + f'''
-<div><div class="acbox">{svgi(sh, 'big')}<div><h2>Armour Class (AC)</h2><p>AC is how hard a hero is to hit. An attacker rolls a D20 and adds their to-hit bonus; if the total equals or beats your AC, the blow lands. The higher the armour class, the harder your character is to hit: every point of AC takes 5% off an enemy's chance.</p></div></div>
+<div><div class="acbox">{svgi(sh, 'big')}<div><h2>Armour Class (AC)</h2><p>AC is how hard a hero is to hit. An attacker rolls a D20 and adds their to-hit bonus; if the total equals or beats your AC, the blow lands. The higher the armour class, the harder your character is to hit.</p></div></div>
 <table class="plain acs"><colgroup><col style="width:40mm"><col><col style="width:22mm"></colgroup><thead><tr><th>Where AC comes from</th><th></th><th class="r">AC</th></tr></thead><tbody>{''.join(f'<tr><th>{a}</th><td>{t}</td><td class="r">{v}</td></tr>' for a, t, v in ac_rows)}</tbody></table>
 <p class="foot">Protection against Evil does not raise AC: it halves the damage the warded hero takes instead. Sleep and Entangle make an enemy easier to hit by lowering its AC.</p></div>
 <hr>
@@ -515,7 +518,7 @@ def combat2_page(G, n):
 <div class="three cards3">
  <div class="card">{d20(20, 'crit')}<h2>Critical hits</h2><p>A natural 20 on the to-hit roll always hits and deals <b>50% more damage</b>, rounded down, and at least 2. A Thief crits on any natural 15 or higher. A few rare weapons crit on a wider range. Monsters never crit.</p></div>
  <div class="card">{d20(20)}<h2>Double Strike</h2><p>Before each melee attack, a separate D20 is rolled. On a natural 20 the hero strikes <b>twice</b>, and each blow rolls to hit on its own. A Thief strikes twice on 15 or higher. Not for ranged attacks, spells or monsters, although some monsters attack twice every turn.</p></div>
- <div class="card">{svgi(G['SHIELD_SVG'], 'big')}<h2>Dodges</h2><p>Some blows that hit never land. The <b>Thief</b> evades 5% of non-magical hits at level 1, rising 1% a level to 14%. The <b>Dwarf's</b> stone skin turns 1 damage aside from 3% of non-magical hits, rising to 12%. A few monsters slip blows too, and rare blades can parry.</p></div>
+ <div class="card">{svgi(G['SHIELD_SVG'], 'big')}<h2>Dodges and damage reduction</h2><p>Some blows can be dodged. The <b>Thief</b> evades 5% of non-magical hits at level 1, rising 1% a level to 14%. The <b>Dwarf's</b> stone skin has a 3% chance of reducing incoming damage by 1 from non-magical hits, rising to 12%. A few monsters slip blows too, and rare blades can parry.</p></div>
 </div>
 <hr>
 <div><h2>Experience <i>XP is earned for every monster the party defeats</i></h2>
@@ -532,7 +535,7 @@ def combat2_page(G, n):
 <hr>
 <div><h2>Gold and treasure <i>the spoils of a hard-won fight</i></h2>
 <div class="two">
-<div><p>Every monster you defeat may leave nothing, a purse of gold, or an item: a weapon, a piece of armour or a scroll. The stronger the monster, the more gold it carries and the finer its gear, and the mightiest can drop two lots of treasure. Drops run a little ahead of the shops, so a lucky party can find a blade before the smiths can sell it.</p></div>
+<div><p>Every monster you defeat may leave nothing, a purse of gold, or an item: a weapon, a piece of armour or a scroll. The stronger the monster, the more gold it carries and the finer its gear, and the mightiest can drop two lots of treasure.</p></div>
 <div><p>Rarest of all are the <b class="uniq">unique weapons</b>: named blades, each made for one class, that drop at most once in a whole quest. Anything you no longer need sells back to any shop for 15% of its price.</p>
 <p class="foot">Fleeing a battle wins no treasure. A party wipe costs half your gold.</p></div>
 </div></div>

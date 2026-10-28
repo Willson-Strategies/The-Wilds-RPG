@@ -237,3 +237,4 @@ table.plain.bands tbody th,table.plain.bands td{padding:.4mm 1.6mm;font-size:9.4
 .strip b.ail{display:inline;font-size:.9em}
 .strip>div{display:flex;flex-direction:column;align-items:center}
 table.plain thead th{white-space:nowrap}
+.cards3 .card h2{font-size:10pt;letter-spacing:.03em}
