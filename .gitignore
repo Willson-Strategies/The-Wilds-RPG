@@ -1,0 +1,7 @@
+# Built by tools/build.py for the Claude preview; never committed
+dist/
+
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
