@@ -155,3 +155,85 @@ td.ic{width:7.4mm;padding:.45mm 0 .45mm 1mm !important}
 .bk.cl .bar i{height:1.75mm}.bk.cl .bar{gap:.4mm}.bk.cl .spells td.fl{width:52mm}
 .thief .stats tbody th,.thief .stats td{padding:.4mm 1.6mm}   /* the Thief has the most abilities */
 .svc .in{top:15mm}.svc .smith div{padding:.75mm 0}.svc .shop tbody th,.svc .shop td{padding-top:.85mm;padding-bottom:.85mm}.svc td.ic{padding:.85mm 0 .85mm 1mm !important}.svc .three{margin-top:6mm}
+
+/* how-to-play pages */
+.guide p{margin-bottom:1.4mm}
+.guide h2.sp,.guide h3.sp{margin-top:2.6mm}
+.guide h3{color:var(--head)}
+.two{display:flex;gap:7mm}.two>div{flex:1;min-width:0}
+.two.tight{margin-top:1.6mm}
+.steps{counter-reset:s;list-style:none;margin-bottom:2.6mm}
+.steps li{counter-increment:s;position:relative;padding-left:9mm;margin-bottom:1.6mm;font-size:10.4pt;line-height:1.36}
+.steps li:before{content:counter(s);position:absolute;left:0;top:.2mm;width:6mm;height:6mm;border-radius:50%;background:#74260f;color:#f5e3bc;font-family:Cinzel;font-weight:800;font-size:9pt;display:flex;align-items:center;justify-content:center}
+.steps b{font-family:Cinzel;font-weight:700;font-size:9.4pt;color:var(--red)}
+.ccards{display:grid;grid-template-columns:repeat(3,1fr);gap:2.4mm 4mm;margin-bottom:3mm}
+.ccard{display:flex;gap:2.6mm;align-items:center;padding:1.6mm;border:.3mm solid rgba(120,90,45,.45);border-radius:1mm;background:rgba(255,240,205,.25)}
+.ccard img{width:15mm;height:15mm;border:.4mm solid #6a4a22;border-radius:.8mm;flex:none}
+.ccard b{display:block;font-family:Cinzel;font-weight:700;font-size:9.6pt;color:var(--head)}
+.ccard span{display:block;font-size:8.8pt;color:var(--red);font-weight:600;line-height:1.15}
+.ccard i{display:block;font-size:8.6pt;color:var(--muted);line-height:1.2;margin-top:.4mm}
+table.plain tbody th,table.plain td{padding:.9mm 1.6mm;font-size:9.8pt;vertical-align:top;line-height:1.3}
+table.plain td.r,table.plain th.r{text-align:right;white-space:nowrap}
+table.plain td.c,table.plain th.c{text-align:center}
+.tip{margin-top:3.4mm;padding:2.6mm 3.4mm;border:.35mm solid rgba(150,115,60,.7);border-radius:1mm;background:rgba(255,240,205,.32);font-size:10.2pt;line-height:1.38}
+.tip b{font-family:Cinzel;color:var(--red);font-size:9.6pt}
+dl.defs{margin:0}
+dl.defs dt{font-family:Cinzel;font-weight:700;font-size:9.2pt;letter-spacing:.04em;color:var(--red);text-transform:none}
+dl.defs dd{font-size:10pt;line-height:1.32;margin-bottom:1.5mm}
+.si{display:inline-flex;width:6mm;height:6mm;vertical-align:middle}.si svg{width:100%;height:100%}
+.si.big{width:12mm;height:13mm}
+.si.POISON,.si.BURN,.si.SHOCK{width:5.6mm;height:5.6mm;border-radius:1mm;padding:.6mm;border:.3mm solid #1d140c}
+.si.POISON{background:#1d4f22}.si.BURN{background:#7a1608}.si.SHOCK{background:#1c3566}
+.acbox{display:flex;gap:4mm;align-items:center;margin-bottom:1.6mm}
+.acbox p{font-size:10.4pt}
+
+.stats6{display:grid;grid-template-columns:1fr 1fr;gap:2mm 7mm}
+.stat{display:flex;gap:2.6mm;align-items:flex-start}
+.stat .si{width:8mm;height:8mm;flex:none;margin-top:.4mm}
+.stat b{font-family:Cinzel;font-weight:700;font-size:9.8pt;color:var(--head)}
+.stat i{font-size:8.8pt;color:var(--muted)}
+.stat p{font-size:9.8pt;line-height:1.3;margin:0}
+.bands th,.bands td{text-align:center}
+.bands thead th{text-align:center}
+.ails td.ic{width:8mm}.ails tbody th{width:22mm}
+.ails.good{margin-top:2mm}
+.wear tbody th{width:26mm}
+.d20{position:relative;display:inline-block;width:12mm;height:12mm;flex:none}
+.d20 svg{width:100%;height:100%}
+.d20 .o{fill:#8c959b;stroke:#15191b;stroke-width:4;stroke-linejoin:round}
+.d20 .l{fill:none;stroke:#343c40;stroke-width:2.2;stroke-linejoin:round}
+.d20 b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:1.6mm;font-family:Cinzel;font-weight:800;font-size:10pt;color:#fffaf0;text-shadow:0 0 .6mm #000}
+.d20.crit .o{fill:#a3221a;stroke:#1a0302}.d20.crit .l{stroke:#460806}
+.formula{display:flex;align-items:center;gap:2.4mm;margin:1mm 0 2mm;font-family:Cinzel;font-weight:700;font-size:9.6pt;color:var(--head)}
+.formula>b{font-size:14pt;color:var(--red)}
+.acf{display:inline-flex;align-items:center;gap:1.2mm}
+.src tbody th{width:27mm;white-space:nowrap}
+.init tbody th,.init td{padding:.6mm 1.6mm}
+.example{padding:2.4mm 3.2mm;border:.35mm solid rgba(150,115,60,.7);border-radius:1mm;background:rgba(255,240,205,.32)}
+.example h4{font-family:Cinzel;font-weight:700;font-size:9pt;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6mm}
+.example p{font-size:10pt;margin:0}
+.cards3{margin-top:0}
+.cards3 .card{padding:3mm;border:.35mm solid rgba(150,115,60,.7);border-radius:1mm;background:rgba(255,240,205,.28);text-align:center}
+.cards3 .card .d20,.cards3 .card .si{margin:0 auto 1.4mm;display:block}
+.cards3 .card h2{margin-bottom:1mm}
+.cards3 .card p{font-size:9.8pt;line-height:1.34;text-align:left}
+.xp tbody th{width:30mm}.xp td{text-align:center}
+.xp{margin:1.6mm 0 2mm}
+.uniq{color:#c25a0a}
+.fill .in{display:flex;flex-direction:column;justify-content:space-between;bottom:13mm}
+.fill .in>*{flex:none}
+.fill hr{margin:0}
+.strip{display:flex;align-items:stretch;gap:1.4mm}
+.strip>div{flex:1;text-align:center;padding:2mm 1.6mm;border:.3mm solid rgba(150,115,60,.6);border-radius:1mm;background:rgba(255,240,205,.25)}
+.strip>div>.d20,.strip>div>.si,.strip>div>.ico{display:flex;margin:0 auto 1.2mm}
+.strip .d20{width:10mm;height:10mm}.strip .d20 b{font-size:8.6pt}
+
+.strip span{display:block;font-size:9pt;line-height:1.25}
+.strip .arr{align-self:center;font-style:normal;font-size:16pt;color:#9a7a45}
+.acs{table-layout:fixed}
+.si.big svg{width:12mm;height:13mm}.si.big{width:12mm;height:13mm;flex:none}
+table.plain.bands tbody th,table.plain.bands td{padding:.4mm 1.6mm;font-size:9.4pt}
+.strip>div>b{display:block;font-family:Cinzel;font-weight:700;font-size:8.8pt;color:var(--red)}
+.strip b.ail{display:inline;font-size:.9em}
+.strip>div{display:flex;flex-direction:column;align-items:center}
+table.plain thead th{white-space:nowrap}

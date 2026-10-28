@@ -27,7 +27,9 @@ async def game_data():
         b = await p.chromium.launch()
         pg = await b.new_page()
         await pg.goto((ROOT / 'index.html').as_uri())   # loads every script; we only read the tables
-        d = await pg.evaluate('JSON.stringify({DATA, ARMOUR, SPELLS, BOOKS, RANGED})')
+        d = await pg.evaluate('''JSON.stringify({DATA, ARMOUR, SPELLS, BOOKS, RANGED, STAT_SVG, SHIELD_SVG, AIL_SVG, STAT_LORE, XP_MON, XP_CUM, WEAR_W, INIT_ODDS,
+            CHA_GOLD, STARTING_GEAR, STARTING_SPELLS, DUR,
+            BANDS: [[0,7],[8,12],[13,14],[15,15],[16,17],[18,19],[20,20],[21,23],[24,24],[25,25]].map(([a, b]) => ({a, b, str: strDmg(a), hit: dexHit(a), ac: dexAC(a), con: DICE_CON(a), wis: DICE_WIS(a), int: DICE_INT(a)}))})''')
         await b.close()
     return json.loads(d)
 
@@ -91,7 +93,7 @@ TEXT = {
 }
 STAT_ROWS = [('STR', 'Strength', 'Extra damage with weapons'), ('DEX', 'Dexterity', 'Hitting more often, harder to hit'),
              ('CON', 'Constitution', 'Extra HP every level'), ('WIS', 'Wisdom', 'Stronger healing spells'),
-             ('INT', 'Intelligence', 'Stronger damage spells'), ('CHA', 'Charisma', 'Shop prices and encounters')]
+             ('INT', 'Intelligence', 'Stronger damage spells'), ('CHA', 'Charisma', 'A fuller starting purse')]
 AXES = [('hp', 'Toughness'), ('def', 'Defence'), ('acc', 'Accuracy'), ('wpn', 'Weapon damage'),
         ('mag', 'Magic'), ('heal', 'Healing'), ('aoe', 'Area damage'), ('ctl', 'Control')]
 BANDS = [('up', 'Weak', '#8e2f17'), ('warn', 'Fair', '#a97a12'), ('ok', 'Strong', '#4f9a52'), ('op', 'Exceptional', '#1f5a34')]
@@ -320,12 +322,233 @@ def services_page(G, n):   # no page title: it carries on from Within the Castle
     return page(n, body, 'city svc')
 
 
+# ---------- how to play (the pages before the class pages) ----------
+ROLE = {c: TEXT[c]['role'] for c in CLASSES}
+
+def d20(n, cls=''):
+    return (f'<span class="d20 {cls}"><svg viewBox="0 0 100 100"><path d="M50 3 92 27v46L50 97 8 73V27Z" class="o"/>'
+            f'<path d="M50 20 76 64H24ZM50 3v17M92 27 76 64M92 73 76 64M50 97 76 64M50 97 24 64M8 73l16-9M8 27l16 37M92 27 50 20 8 27" class="l"/></svg><b>{n}</b></span>')
+
+def svgi(svg, cls=''):
+    return f'<span class="si {cls}">{svg}</span>'
+
+def sec(title, body, cls=''):
+    return f'<section class="blk {cls}"><h2>{title}</h2>{body}</section>'
+
+def start_page(G, n):
+    D = G['DATA']
+    cards = ''.join(f'''<div class="ccard"><img src="../../art/portraits/{SLUG(c)}.jpg" alt=""><div><b>{c}</b><span>{ROLE[c]}</span><i>{E(TEXT[c]['tag'])}</i></div></div>''' for c in CLASSES)
+    def kit(c):
+        g = G['STARTING_GEAR'][c]
+        w = [('a trusty ' + x[1:] + ' of their own') if x and x[0] == '*' else x for x in g if x]
+        return ', '.join(w)
+    rows = ''.join(f'''<tr><th>{c}</th><td>{kit(c)}</td><td>{', '.join(G['STARTING_SPELLS'].get(c, [])) or '—'}</td></tr>''' for c in CLASSES)
+    steps = [('Choose a quest slot.', 'You can keep up to five quests going at once, each with its own party. Every quest saves itself as you play and carries on exactly where you left it. There is no going back, so choose with care.'),
+             ('Pick four heroes.', 'Any mix of the six classes, and the same class more than once if you like. Give each hero a name.'),
+             ('Fate rolls their stats.', "Each hero's stats are rolled with their class's dice, and there are no rerolls. Switching a hero to another class and back keeps the same rolls."),
+             ('Enter the castle.', "The party sets out with a purse of 5 GP for each hero, plus up to 5 GP more each for a winning way with merchants (Charisma).")]
+    body = head('How to play', 'Starting the Game', 'Four strangers, one castle, and the wilds beyond') + f'''
+<p class="intro wide"><span class="drop">C</span>reate a party of four adventurers to go and find allies within the strange new land you find yourselves in. The last castle stands at the edge of the wilds. Beyond its walls lie rat-choked roads, haunted woods and worse, and everything out there would happily see you dead.</p>
+<div><h2>Raise your party</h2>
+<ol class="steps">{''.join(f'<li><b>{a}</b> {t}</li>' for a, t in steps)}</ol></div>
+<div><h2>The six classes <i>each has a full page later in this booklet</i></h2>
+<div class="ccards">{cards}</div></div>
+<div><h2>What each hero starts with</h2>
+<table class="plain"><thead><tr><th>Class</th><th>Weapons</th><th>Spells in the spellbook</th></tr></thead><tbody>{rows}</tbody></table></div>
+<div class="tip"><b>A good first party.</b> A Fighter or Dwarf to hold the front, a Cleric to keep everyone standing, a Magic User for raw spell power and a Thief for speed and luck. Put your toughest heroes in the first two places: monsters go for the front of the party far more often than the back.</div>'''
+    return page(n, body, 'guide fill')
+
+def play_page(G, n):
+    castle = [('The Inn', 'A safe night behind the walls. Everyone wakes at full health with every spell restored, level 2 spells included.'),
+              ('Weapon & Armour Shop', 'Better steel and heavier armour. Finer wares appear as your party grows in fame.'),
+              ('Magic Shop', 'Scrolls that teach new spells to your casters.'),
+              ('Blacksmith', 'Polishes worn weapons and armour back to their best.'),
+              ('The Clerics', 'Heal the party, cleanse ailments and raise the fallen, free of charge.'),
+              ('The Caravan', 'Takes you straight to any place you have already visited.'),
+              ('Party & gear', 'Equip weapons and armour, fill spellbooks and set the marching order.')]
+    wild = [('Explore', 'Time moves on until something finds you: monsters, a scrap of lore, a hidden cache or a chest.'),
+            ('Make camp', 'Rest for as many hours as you choose. Each hour heals every living hero D3 HP (D3+1 with a living Cleric). 8 hours restores level 1 spells; 16 hours restores level 2 spells too. The longer you rest, the more likely something finds you, and an ambush always strikes first.'),
+            ('Return to the castle', 'Head home to heal, shop and sleep. The road back is not always quiet.')]
+    dl = lambda xs: ''.join(f'<dt>{a}</dt><dd>{t}</dd>' for a, t in xs)
+    body = head('How to play', 'Playing the Game', 'Out into the wilds, and back again') + f'''
+<p class="intro wide"><span class="drop">T</span>ravel through the wilds fighting monsters and gaining treasures, then return to the castle to equip yourselves with stronger weapons and spells from its shops. Each area of the wilds is tougher than the last, and its monsters guard better rewards.</p>
+<div class="two">
+  <div><h2>In the castle</h2><dl class="defs">{dl(castle)}</dl></div>
+  <div><h2>In the wilds</h2><dl class="defs">{dl(wild)}</dl>
+    <h2 class="sp">Monsters approach</h2><p>When monsters find you, you see who is coming and choose to <b>Fight</b> or <b>Flee</b>. A party that flees wins no experience or treasure, and if the escape fails the monsters strike first.</p></div>
+</div>
+<hr>
+<div class="two">
+  <div><h2>In battle</h2><p>On each hero's turn you can <b>Attack</b> with their melee weapon, <b>Shoot</b> with a sling or bow, <b>Cast</b> a spell from their spellbook, <b>Wait</b>, or try to <b>Flee</b>. Hover over an enemy to see the <b>Roll needed</b> to hit it, the damage you would deal and the chance of any ailment. The Combat pages explain every roll.</p>
+    <h2 class="sp">Marching order</h2><p>The first two heroes in the party stand at the front and take most of the blows: monsters attack them about three times as often as the two at the back. Drag the hero cards in <b>Party &amp; gear</b> to change the order.</p></div>
+  <div><h2>When heroes fall</h2><p>A hero at 0 HP falls and takes no further part in the battle. If the rest of the party wins, the fallen hero earns only a tenth of their experience, and stays down until the Clerics raise them.</p>
+    <p>If the whole party falls, a passing caravan carries them back to the castle. Thieves take half your gold on the way, and your gear takes a beating.</p>
+    <h2 class="sp">Growing stronger</h2><p>Every monster defeated earns experience, and heroes level up all the way to level 10, rolling new stats and HP each time. Spend your gold on better weapons, armour and scrolls, and push on into deeper, deadlier places. Once your party has outgrown an area, monsters there find you less often.</p></div>
+</div>'''
+    return page(n, body, 'guide fill')
+
+def stats_page(G, n):
+    SV, sh = G['STAT_SVG'], G['SHIELD_SVG']
+    ac_rows = [('Base', 'Every hero starts at 10.', '10'), ('Dexterity', 'Quick heroes are harder to pin down (see the table below).', '+0 to +4'),
+               ('Armour', 'Leather armour +2, chain mail +4, plate mail +6.', '+2 to +6'), ('Shield', 'For the classes that can carry one.', '+1'),
+               ('Shooting from range', 'A hero who attacks with a sling or bow keeps their distance until their next turn.', '+2'),
+               ('Worn armour', 'Battered or ruined armour and shields protect less (see Wear and repair).', '−1 or −2')]
+    does = {'STR': 'Adds to the damage of every weapon blow, melee or ranged.',
+            'DEX': 'Adds to every weapon attack roll, and to AC once it reaches 13.',
+            'CON': 'Adds HP each time the hero levels up. It does not change HP already gained.',
+            'WIS': "Adds to every healing spell. The Elf and Thief add half.",
+            'INT': "Adds to every damage spell (the Elf and Thief add half, and Fireball half again), and each point adds 1% to the chance of Sleep and Entangle.",
+            'CHA': 'Adds up to 5 GP to the starting purse. In time it will also sway shop prices and encounters.'}
+    names = dict(STR='Strength', DEX='Dexterity', CON='Constitution', WIS='Wisdom', INT='Intelligence', CHA='Charisma')
+    stats = ''.join(f'''<div class="stat">{svgi(SV[k])}<div><b>{names[k]}</b> <i>{E(G['STAT_LORE'][k])}</i><p>{does[k]}</p></div></div>''' for k in ['STR', 'DEX', 'CON', 'WIS', 'INT', 'CHA'])
+    sg = lambda v: f'+{v}' if v else '+0'
+    brows = ''.join(f'''<tr><th>{b['a'] if b['a'] == b['b'] else f"{b['a']}–{b['b']}"}</th><td>{sg(b['str'])}</td><td>{sg(b['hit'])}</td><td>{sg(b['ac'])}</td><td>{b['con']}</td><td>{b['wis']}</td><td>{b['int']}</td></tr>''' for b in G['BANDS'])
+    body = head('Your heroes', 'Player Stats', 'Steel, sinew, wits and nerve') + f'''
+<div><div class="acbox">{svgi(sh, 'big')}<div><h2>Armour Class (AC)</h2><p>AC is how hard a hero is to hit. An attacker rolls a D20 and adds their to-hit bonus; if the total equals or beats your AC, the blow lands. The higher the armour class, the harder your character is to hit: every point of AC takes 5% off an enemy's chance.</p></div></div>
+<table class="plain acs"><colgroup><col style="width:40mm"><col><col style="width:22mm"></colgroup><thead><tr><th>Where AC comes from</th><th></th><th class="r">AC</th></tr></thead><tbody>{''.join(f'<tr><th>{a}</th><td>{t}</td><td class="r">{v}</td></tr>' for a, t, v in ac_rows)}</tbody></table>
+<p class="foot">Protection against Evil does not raise AC: it halves the damage the warded hero takes instead. Sleep and Entangle make an enemy easier to hit by lowering its AC.</p></div>
+<hr>
+<div><h2>The six stats</h2>
+<div class="stats6">{stats}</div></div>
+<div><h2>What each score is worth</h2>
+<table class="plain bands"><thead><tr><th>Score</th><th>STR<br>damage</th><th>DEX<br>to hit</th><th>DEX<br>AC</th><th>CON<br>HP per level</th><th>WIS<br>healing</th><th>INT<br>spell damage</th></tr></thead><tbody>{brows}</tbody></table>
+<p class="foot">Every stat can reach 25 unless the class page shows a lower Limit. Dice bonuses are rolled fresh each time: a Wisdom of 16 adds D3+3 to every heal.</p></div>'''
+    return page(n, body, 'guide fill')
+
+def stats2_page(G, n):
+    A = G['AIL_SVG']
+    ails = [('POISON', svgi(A['POISON'], 'POISON'), 'Takes D3 damage at the start of each of its turns (some monsters\' poison bites harder).', '3 turns'),
+            ('BURN', svgi(A['BURN'], 'BURN'), 'Takes D3 damage as the flames catch, then takes 15% more damage from every source (except POISON).', '3 turns'),
+            ('SHOCK', svgi(A['SHOCK'], 'SHOCK'), 'Reels from the jolt and loses its next turn.', '1 turn'),
+            ('Sleep', icon('Sleep'), 'Cannot act. A sleeping enemy is 15% easier to hit. Any non-magical damage wakes the sleeper.', '2 turns'),
+            ('Entangle', icon('Entangle'), 'Bound fast and cannot act. An entangled enemy is 25% easier to hit, and damage does not free it.', '3 turns')]
+    arows = ''.join(f'<tr><td class="ic">{ic}</td><th>{ail(nm) if nm.isupper() else nm}</th><td>{ail(E(t))}</td><td class="c">{d}</td></tr>' for nm, ic, t, d in ails)
+    good = [('Warded', icon('Protection against Evil'), 'Protection against Evil: takes half damage from every source for 2 turns.'),
+            ('Resistant', icon('Cure Ailment'), 'Cure Ailment: a 25% chance to shrug off any new ailment for 2 turns.')]
+    grows = ''.join(f'<tr><td class="ic">{ic}</td><th>{nm}</th><td colspan="2">{t}</td></tr>' for nm, ic, t in good)
+    WW = G['WEAR_W']; AR = G['ARMOUR']
+    hrs = ['0–2', '2–4', '4–6', '6–8', '8–10', '10+']
+    def wpen(i):
+        h, d = WW[i]; out = []
+        if h: out.append(f'−{h} to hit')
+        if d: out.append(f'−{d} damage')
+        return ', '.join(out) or '—'
+    def apen(i):
+        parts = {}
+        for nm, a in AR.items():
+            if a['wear'][i]: parts.setdefault(a['wear'][i], []).append(nm.replace(' Armour', '').replace(' Mail', ' mail'))
+        return '; '.join(f"{', '.join(v)} −{k} AC" for k, v in sorted(parts.items())) or '—'
+    wrows = ''.join(f'<tr><th>{G["DUR"][i]}</th><td class="c">{hrs[i]}</td><td>{wpen(i)}</td><td>{apen(i)}</td></tr>' for i in range(6))
+    body = f'''
+<div><h2>Status ailments</h2>
+<p>Weapons, spells and monsters can leave a target suffering long after the blow. An ailment only takes hold when the attack that carries it hits.</p>
+<table class="plain ails"><thead><tr><th colspan="2">Ailment</th><th>What it does</th><th class="c">Lasts</th></tr></thead><tbody>{arows}</tbody></table></div>
+<ul class="use">
+<li><b>One of each.</b> A target can suffer several different ailments at once, but only one of each kind. Suffering the same one again starts it over from the beginning.</li>
+<li><b>Where they come from.</b> Fireball can BURN and Lightning Bolt can SHOCK; Sleep and Entangle are spells of their own. The Legendary blades carry BURN, SHOCK or POISON, and many monsters bring their own. Some foes cannot be harmed by them: fire giants do not burn, and the strongest foes shrug off Sleep and Entangle.</li>
+<li><b>Curing them.</b> SHOCK, Sleep and Entangle end with the battle, but POISON and BURN follow a hero into the next fight until they run their course. Cure Ailment clears every ailment at once, and the Clerics in the castle cleanse the whole party for free.</li>
+</ul>
+<table class="plain ails good"><thead><tr><th colspan="2">Helpful effects</th><th colspan="2"></th></tr></thead><tbody>{grows}</tbody></table>
+<hr>
+<div><h2>Wear and repair <i>steel rusts, leather splits, and the wilds take their toll</i></h2>
+<p>Weapons, armour and shields wear while you play in the wilds and caves: a little for every real minute spent exploring or fighting there. Nothing wears in the castle or in camp, or while the game is not on screen. Wear shows on each item's picture as rust, chips and dried blood (updated when you make camp), and hovering over any item shows its durability and any penalty.</p>
+<table class="plain wear"><thead><tr><th>Durability</th><th class="c">Hours in<br>the wilds</th><th>Weapon penalty</th><th>Armour penalty</th></tr></thead><tbody>{wrows}</tbody></table></div>
+<div class="two tight">
+ <div><ul class="use">
+  <li><b>Hard use.</b> Each enemy a weapon kills costs it 1% durability (spells and ailments cost nothing). When a hero falls, their armour and shield each lose 1–10%.</li>
+  <li><b>Worse when worn.</b> Once an item drops to 45% durability or below, it wears 25% faster from everything.</li></ul></div>
+ <div><ul class="use">
+  <li><b>Repairs.</b> The Blacksmith polishes any item back to Pristine for a tenth of its shop price (at least 1 GP).</li>
+  <li><b>Fresh gear.</b> Wear belongs to the item: anything newly bought or found starts clean. A hit always deals at least 1 damage, however worn the blade.</li></ul></div>
+</div>'''
+    return page(n, body, 'guide fill')
+
+def combat_page(G, n):
+    steps = [(d20(14), 'Roll to hit', 'A D20 plus your bonuses against the enemy\'s AC.'), (d20(6, 'crit'), 'Roll damage', 'Only on a hit: the weapon\'s dice plus Strength.'),
+             (svgi(G['SHIELD_SVG']), 'Dodge?', 'A Thief may evade, a Dwarf\'s stone skin may soften the blow.'), (svgi(G['AIL_SVG']['BURN'], 'BURN'), 'Ailments', 'Any ailment the blow carries takes hold.'),
+             (icon('Sword'), 'Again?', 'On a Double Strike, the second blow rolls all over again.')]
+    STEPS = '<div><h2>A blow, step by step</h2><div class="strip">' + '<i class="arr">›</i>'.join(f'<div>{ic}<b>{a}</b><span>{ail(E(t))}</span></div>' for ic, a, t in steps) + '</div></div>'
+    IO = G['INIT_ODDS']
+    init = [('Hero is higher level', 'Always')] + [(('Same level' if int(k) == 0 else f'Monster {k} level{"s" if int(k) > 1 else ""} higher'), f'{v}%') for k, v in IO.items()] + [('Monster 5 or more levels higher', '4%')]
+    irows = ''.join(f'<tr><th>{a}</th><td class="r">{b}</td></tr>' for a, b in init)
+    hit_src = [('D20', 'The roll itself, 1 to 20.'), ('Dexterity', '+0 to +5, from the hero\'s DEX score.'), ('Weapon', 'Each weapon\'s To hit, from +0 (Staff) to +4 (the Legendary blades).'),
+               ('Wear', 'A battered or ruined weapon takes −1.')]
+    dmg_src = [('Weapon dice', 'The weapon\'s Damage, rolled each blow: a Sword rolls D3+1.'), ('Strength', '+0 to +8, from the hero\'s STR score.'),
+               ('Wear', 'Chipped or battered −1, ruined −2.'), ('Against the undead', 'Maces and hammers deal 50% more.'),
+               ('Critical hit', '50% more, rounded down.'), ('BURN on the target', '15% more from every source.'), ('Warded target', 'Half damage.')]
+    tbl = lambda xs: ''.join(f'<tr><th>{a}</th><td>{b}</td></tr>' for a, b in xs)
+    body = head('The rules of battle', 'Combat', 'Steel, spells and the roll of the dice') + f'''
+<div class="two">
+<div><h2>Who goes first</h2>
+<p>Initiative is rolled once, as battle begins, and holds for the whole fight. Heroes line up highest level first, and so do monsters (equal levels in a random order). The two lines are then merged: the next hero goes before the next monster with the chance below.</p>
+<table class="plain init"><thead><tr><th>Hero against monster</th><th class="r">Hero first</th></tr></thead><tbody>{irows}</tbody></table>
+<p class="foot">A monster never takes two turns in a row while a hero is still waiting to act. In an ambush, or after a failed escape, every monster acts before the party in the first round.</p></div>
+<div><h2>Rolling to hit</h2>
+<div class="formula">{d20(14)}<span>+ DEX + weapon</span><b>≥</b><span class="acf">{svgi(G['SHIELD_SVG'])} enemy AC</span></div>
+<table class="plain src"><tbody>{tbl(hit_src)}</tbody></table>
+<ul class="use">
+<li><b>Natural 20</b> always hits, and is a critical hit. <b>Natural 1</b> always misses. A Thief's natural 15 or higher always hits and crits.</li>
+<li><b>Roll needed.</b> Hover over an enemy to see the lowest roll that hits it. Each point of to-hit bonus adds 5% to your chance; each point of AC takes 5% away.</li>
+<li><b>Spells never miss.</b> Only Sleep and Entangle can fail, on their own chance.</li>
+<li><b>Monsters</b> roll the same way: a D20 plus their to-hit against your AC. Some fight better in packs.</li>
+</ul></div>
+</div>
+<hr>
+<div><h2>Rolling damage <i>only rolled when the blow lands</i></h2>
+<div class="two">
+<div><table class="plain src"><tbody>{tbl(dmg_src)}</tbody></table>
+<p class="foot">Every hit deals at least 1 damage, and every critical hit at least 2.</p></div>
+<div><div class="example"><h4>For example</h4><p>A Fighter with Strength 16 swings a Sword: <b>D3+1</b> from the blade and <b>+3</b> for Strength, so <b>D3+4</b>, or 5 to 7 damage. On a critical hit, a roll of 7 becomes 10.</p></div>
+<h3 class="sp">Spells</h3><p>Damage spells roll their own dice and add the caster's Intelligence bonus; healing spells add the Wisdom bonus. The Elf and Thief add half the bonus. Fireball adds half again, then splashes half its damage onto every other enemy.</p>
+<h3 class="sp">Monsters</h3><p>Each monster rolls its own damage dice. Monsters never land critical hits: a natural 20 always hits them home, but for normal damage.</p></div>
+</div></div>
+{STEPS}'''
+    return page(n, body, 'guide fill')
+
+def combat2_page(G, n):
+    FLEE = '''<div class="two"><div><h2>Fleeing</h2><p>Any hero can try to flee on their turn, using that turn. The chance rests on how quick the party is against how strong the monsters still standing are, so a nimble party slips away more easily. If the attempt fails, the turn is lost. A fleeing party wins no experience or treasure, and some battles cannot be fled at all.</p></div>
+<div><h2>Ambushes</h2><p>Monsters that catch the party resting, or that cut off a failed escape before battle, strike first: every one of them acts before the party in the first round. Ambushed heroes find it far harder to get away. Rest somewhere safe, like the Inn, when you can.</p></div></div>'''
+    XM, XC = G['XP_MON'], G['XP_CUM']
+    xm = ''.join(f'<td>{XM[str(L)]}</td>' for L in range(1, 11))
+    xc = ''.join(f'<td>{XC[L]:,}</td>' for L in range(2, 11))
+    body = f'''
+<div class="three cards3">
+ <div class="card">{d20(20, 'crit')}<h2>Critical hits</h2><p>A natural 20 on the to-hit roll always hits and deals <b>50% more damage</b>, rounded down, and at least 2. A Thief crits on any natural 15 or higher. A few rare weapons crit on a wider range. Monsters never crit.</p></div>
+ <div class="card">{d20(20)}<h2>Double Strike</h2><p>Before each melee attack, a separate D20 is rolled. On a natural 20 the hero strikes <b>twice</b>, and each blow rolls to hit on its own. A Thief strikes twice on 15 or higher. Not for ranged attacks, spells or monsters, although some monsters attack twice every turn.</p></div>
+ <div class="card">{svgi(G['SHIELD_SVG'], 'big')}<h2>Dodges</h2><p>Some blows that hit never land. The <b>Thief</b> evades 5% of non-magical hits at level 1, rising 1% a level to 14%. The <b>Dwarf's</b> stone skin turns 1 damage aside from 3% of non-magical hits, rising to 12%. A few monsters slip blows too, and rare blades can parry.</p></div>
+</div>
+<hr>
+<div><h2>Experience <i>XP is earned for every monster the party defeats</i></h2>
+<table class="plain xp"><tbody><tr><th>Monster level</th>{''.join(f'<td>{L}</td>' for L in range(1, 11))}</tr><tr><th>XP</th>{xm}</tr></tbody></table>
+<div class="two">
+<div><ul class="use">
+ <li><b>The killing blow.</b> The hero who brings a monster down earns 80% of its XP; the other three share the rest. An area spell that kills several monsters earns its caster 80% of each.</li>
+ <li><b>Catching up.</b> A hero below the party's average level earns 12.5% more XP for each level behind.</li></ul></div>
+<div><ul class="use">
+ <li><b>Falling short.</b> A hero who falls during a battle the party wins earns only 10% of their share. Fleeing or a party wipe earns nothing.</li>
+ <li><b>Levelling up.</b> Each new level rolls fresh stats and HP from the class's dice, and spellbooks gain slots.</li></ul></div>
+</div>
+<table class="plain xp"><tbody><tr><th>Reach level</th>{''.join(f'<td>{L}</td>' for L in range(2, 11))}</tr><tr><th>Total XP</th>{xc}</tr></tbody></table></div>
+<hr>
+<div><h2>Gold and treasure <i>the spoils of a hard-won fight</i></h2>
+<div class="two">
+<div><p>Every monster you defeat may leave nothing, a purse of gold, or an item: a weapon, a piece of armour or a scroll. The stronger the monster, the more gold it carries and the finer its gear, and the mightiest can drop two lots of treasure. Drops run a little ahead of the shops, so a lucky party can find a blade before the smiths can sell it.</p></div>
+<div><p>Rarest of all are the <b class="uniq">unique weapons</b>: named blades, each made for one class, that drop at most once in a whole quest. Anything you no longer need sells back to any shop for 15% of its price.</p>
+<p class="foot">Fleeing a battle wins no treasure. A party wipe costs half your gold.</p></div>
+</div></div>
+<hr>
+{FLEE}'''
+    return page(n, body, 'guide fill')
+
+
 CSS = (HERE / 'booklet.css').read_text()
 
 async def main():
     G = await game_data()
     F = json.loads((HERE / 'class-figures.json').read_text())
-    pages = [class_page(G, F, i + 1, c) for i, c in enumerate(CLASSES)]
+    # There are ten parchment backgrounds: the class, spellbook and city pages keep their own; the how-to-play pages reuse them.
+    pages = [f(G, bg) for f, bg in zip([start_page, play_page, stats_page, stats2_page, combat_page, combat2_page], [8, 3, 5, 7, 4, 10])]
+    pages += [class_page(G, F, i + 1, c) for i, c in enumerate(CLASSES)]
     pages += [book_page(G, 7, 'Magic User'), book_page(G, 8, 'Cleric'), shops_page(G, 9), services_page(G, 10)]
     doc = f'<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>Base Line: The Wilds · Player Booklet</title><style>{CSS}</style></head><body>{"".join(pages)}</body></html>'
     OUT_HTML.write_text(doc)
