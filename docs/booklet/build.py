@@ -216,8 +216,8 @@ def class_page(G, F, n, cls):
         cap = caps.get(k, 25)
         lim = '—' if none else (f'<b class="cap">{cap}</b>' if cap < 25 else str(cap))
         typ = round(fig['typical'][k])   # Python rounds halves to even, as the old booklet did
-        rows += f'<tr><th>{name} <i>{note}</i></th><td>{dash(st)}</td><td>{dash(up)}</td><td>{typ}</td><td>{lim}</td></tr>'
-    rows += f'<tr class="hp"><th>Hit Points <i>How much damage you can take</i></th><td>4 + CON</td><td>{lvl[0]} + CON bonus</td><td>{round(fig["typical"]["HP"])}</td><td>—</td></tr>'
+        rows += f'<tr><th>{name} <i>{note}</i></th><td>{dash(up)}</td><td>{typ}</td><td>{lim}</td></tr>'
+    rows += f'<tr class="hp"><th>Hit Points <i>How much damage you can take</i></th><td>{lvl[0]} + CON bonus</td><td>{round(fig["typical"]["HP"])}</td><td>—</td></tr>'
     legend = ''.join(f'<span><i style="background:{c}"></i>{w}</span>' for _, w, c in BANDS)
     body = head('Character class', 'The ' + cls, T['tag']) + f'''
 <div class="hero">
@@ -233,7 +233,7 @@ def class_page(G, F, n, cls):
 </div>
 <hr>
 <h2>Stats and growth</h2>
-<table class="stats"><thead><tr><th>Stat</th><th>Starts</th><th>Per level</th><th>Typical at<br>level 10</th><th>Limit</th></tr></thead><tbody>{rows}</tbody></table>
+<table class="stats"><thead><tr><th>Stat</th><th>Per level</th><th>Typical at<br>level 10</th><th>Limit</th></tr></thead><tbody>{rows}</tbody></table>
 <p class="foot">Dice show what you roll. “0–1” means roll to gain nothing or one point. Typical at level 10 shows an average hero; yours may roll higher or lower. The Limit is the highest a stat can ever reach.</p>'''
     return page(n, body, 'cls ' + SLUG(cls))
 
