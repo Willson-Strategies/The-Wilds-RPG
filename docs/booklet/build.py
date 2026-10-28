@@ -297,7 +297,7 @@ def shops_page(G, n):
 <p class="foot">The Magic User cannot wear armour or carry a shield, although rare magic armour is rumoured to exist.</p>'''
     return page(n, body, 'city')
 
-def services_page(G, n):
+def services_page(G, n):   # no page title: it carries on from Within the Castle Walls
     D = G['DATA']
     items = [(w['name'], w['price']) for w in sorted(D['weapons'], key=lambda w: w['price'])] + [(a, v['price']) for a, v in G['ARMOUR'].items()]
     smith = ''.join(f'<div>{icon(nm)}<b>{E(nm)}</b><span class="gp">{max(1, math.floor(p * .1))} GP</span></div>' for nm, p in items)
@@ -305,7 +305,7 @@ def services_page(G, n):
     for sp, s in G['SPELLS'].items():
         mu = s['list'] == 'MU'
         srows += f'''<tr><td class="ic">{icon(sp)}</td><th>{E(sp)}</th><td class="fl">{'Magic User' if mu else 'Cleric'}</td><td class="c">{s['lvl']}</td><td class="ef">{ail(E(SPELL_TEXT[sp][2].format(**spell_fmt(G, sp))))}</td><td>{'Magic User' if mu else 'Cleric'}, Elf, Thief</td><td class="gp">{s['price']} GP</td></tr>'''
-    body = head('The city', 'Services of the Castle', 'Mending, magic, mercy and the open road') + f'''
+    body = f'''
 <h2>The blacksmith <i>Polishing and repairs restore worn gear to its best</i></h2>
 <p>Weeks in the wild leave blades chipped and mail rusted, and worn gear fights worse. Bring it to the forge and the smith will polish and repair it for a tenth of its price.</p>
 <div class="smith">{smith}</div>

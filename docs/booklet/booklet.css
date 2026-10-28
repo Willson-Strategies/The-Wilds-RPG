@@ -154,3 +154,4 @@ td.ic{width:7.4mm;padding:.45mm 0 .45mm 1mm !important}
 .bk .hd{margin-bottom:1.2mm}.abil p{line-height:1.26}.bk .bkey{margin-top:1mm}
 .bk.cl .bar i{height:1.75mm}.bk.cl .bar{gap:.4mm}.bk.cl .spells td.fl{width:52mm}
 .thief .stats tbody th,.thief .stats td{padding:.4mm 1.6mm}   /* the Thief has the most abilities */
+.svc .in{top:15mm}.svc .smith div{padding:.75mm 0}.svc .shop tbody th,.svc .shop td{padding-top:.85mm;padding-bottom:.85mm}.svc td.ic{padding:.85mm 0 .85mm 1mm !important}.svc .three{margin-top:6mm}
