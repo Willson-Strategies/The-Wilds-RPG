@@ -3,6 +3,9 @@
 Newest first. One short entry per build: what changed for the player, and why when it matters.
 Rule changes are also made in the "RPG Base line" Google Doc. The repository history has every line-by-line change.
 
+## Build 118 · 29 Oct 2026
+- **Spell cries wait for the dice.** When a Magic User or Cleric casts a damage spell (Magic Missile, Fireball, Lightning Bolt, Undead Ward, Undead Abyss), their cry of effort now sounds as the spell is fired, after the damage dice have rolled and added up. Before, the cry played the moment the spell was chosen, during the roll. Fireball's cry comes as the fireball leaves the caster's hands. Healing, Sleep, Entangle and other spells with no damage roll are unchanged.
+
 ## Build 117 · 29 Oct 2026
 - **Dice with drama** (Tom's feedback). Each die rolls, then every modifier appears under it with where it comes from (the weapon's picture, the DEX, STR or INT icon, or the monster's face), flies into the die and adds to the number. The to-hit die then shows the AC it had to reach and HIT or MISS. Weapons with no damage dice (most starting weapons) show a round damage token that adds up the same way. Dice are bigger, roll more slowly, and the screen darkens behind them while they roll.
 - Damage spells roll and add up their dice before the spell flies.
