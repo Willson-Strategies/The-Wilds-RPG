@@ -1,8 +1,17 @@
 /* ---------------- prologue (Build 119) ----------------
-   Every new quest opens on the night the orcs came. The party you raised fights one tutorial battle as level 5
-   veterans of the Duke's guard (3 Goblins and an Orc, level 4), with windows that explain the battle screen,
-   TO HIT and damage. Afterwards the party is put back exactly as it was raised, at level 1, and the quest begins.
-   S.prologue = {stage, keep: the raised party, l5: the level 5 party (for a retry), tips: windows already seen}. */
+   Every new quest opens on the night the orcs came, before the party is raised. Four of the Duke's guard (Odran,
+   Rhovik, Veyra and Borska) fight one tutorial battle at level 5 (3 Goblins and an Orc, level 4), with windows that
+   explain the battle screen, TO HIT, damage and the stats behind each bonus. Afterwards comes Raise Your Party,
+   starting from those four at level 1 (Build 119).
+   S.prologue = {stage, keep: the four at level 1, l5: the level 5 party (for a retry), tips: windows already seen}. */
+const PRO_PARTY = [['Fighter', 'Odran'], ['Thief', 'Rhovik'], ['Magic User', 'Veyra'], ['Dwarf', 'Borska']];
+function newQuestPrologue(n) {   // a new quest: straight into the prologue, no party screen first
+  QUEST = n; DRAFT_ST = {};
+  const party = PRO_PARTY.map(([c, nm]) => makeHero(c, nm));
+  party.forEach((h, i) => { DRAFT_ST[i + '|' + h.cls] = h.st; });
+  S = {party, gold: startGold(party), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true};
+  beginPrologue(); save(); go(); window.scrollTo({top: 0});
+}
 const PRO_FOES = ['Goblin', 'Goblin', 'Goblin', 'Orc'];
 const PRO_SPELL = {'Magic User': 'Magic Missile', Elf: 'Magic Missile', Thief: 'Magic Missile', Cleric: 'Cure Light Wounds'};
 function beginPrologue() {
@@ -15,9 +24,8 @@ function beginPrologue() {
   });
   S.prologue = {stage: 0, keep, l5: JSON.stringify(S.party), tips: []};
 }
-function endPrologue() {
-  S.party = JSON.parse(S.prologue.keep); S.prologue = null; S.battle = null;
-  S.loc = 'castle'; castleTab = 'square'; S.lastResult = ''; save(); go();
+function endPrologue() {   // on to Raise Your Party, starting from the prologue's four at level 1
+  S.party = JSON.parse(S.prologue.keep); S.prologue = null; S.battle = null; S.raising = true; S.lastResult = ''; save(); go();
 }
 /* ---- the scenes ---- */
 const PRO_SCENES = [
@@ -31,7 +39,7 @@ const PRO_SCENES = [
     <p>You raise your weapons.</p>`, btn: 'Raise your weapons'},
   {title: 'Dawn', art: 'dawn', text: `<p class="lead">The last of them falls, and the gate holds. By dawn the storm has blown itself out, and the bodies of orcs and goblins lie in heaps beneath the walls.</p>
     <p>The Duke finds you among them, his cloak torn and his sword notched. "The castle stands," he says, "but it will not stand alone a second time. Somewhere out in the wilds there must be allies. Find them."</p>
-    <p class="note">The prologue is over. Your heroes now begin their quest as they were raised, at level 1.</p>`, btn: 'Enter the castle'},
+    <p class="note">The prologue is over. Now raise the party who will set out on the quest. Every hero begins at level 1.</p>`, btn: 'Raise your party'},
 ];
 function screenPrologue() {
   const P = S.prologue, sc = PRO_SCENES[P.stage];
@@ -42,7 +50,7 @@ function screenPrologue() {
   proSky(P.stage);
   startScroll();
   if ($('#proSkip')) $('#proSkip').onclick = () => {
-    const b = $('#proSkip'); if (!b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Sure? Skip to the castle'; return; }
+    const b = $('#proSkip'); if (!b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Sure? Skip to the party'; return; }
     endPrologue();
   };
   $('#proNext').onclick = () => {
@@ -204,15 +212,16 @@ function proNeigh() {   // a frightened whinny: a voice that leaps up and shudde
 /* The storm keeps going under the tutorial battle too, quieter, with the rain falling over the screen. */
 setInterval(() => {
   const pro = S && S.prologue, inBattle = pro && S.battle && S.battle.boss === 'prologue';
-  if (pro && S.prologue.stage < 3) stormOn(inBattle ? .1 : .3); else stormOff();
+  const rolling = !!document.querySelector('.fx-die');
+  if (pro && S.prologue.stage < 3) stormOn(inBattle ? (rolling ? .02 : .06) : .3); else stormOff();   // the rain drops away under the dice
   let ov = document.getElementById('proRainOver');
   if (inBattle && !ov) { ov = document.createElement('canvas'); ov.id = 'proRainOver'; document.body.appendChild(ov); proRain(ov, {n: 160, col: 'rgba(150,170,200,.28)'}); }
   else if (!inBattle && ov) ov.remove();
-  if (inBattle && Math.random() < .03 && !document.querySelector('.pro-tut')) { const f = document.createElement('div'); f.className = 'pro-flash pro-flash-page go'; document.body.appendChild(f); setTimeout(() => f.remove(), 900); proThunder(.6, 400 + Math.random() * 900); }
+  if (inBattle && !rolling && Math.random() < .03 && !document.querySelector('.pro-tut')) { const f = document.createElement('div'); f.className = 'pro-flash pro-flash-page go'; document.body.appendChild(f); setTimeout(() => f.remove(), 900); proThunder(.6, 400 + Math.random() * 900); }
 }, 500);
 
 /* ---- the tutorial: windows that point at what's on screen ---- */
-let TUT_EL = null, TUT_ATK = null, TUT_CAST = false;
+let TUT_EL = null, TUT_ATK = null, TUT_CAST = null, TUT_HURT = null;
 const tutOn = () => S && S.prologue && S.battle && S.battle.boss === 'prologue' && !S.prologue.noTips;
 const tutSeen = id => S.prologue.tips.includes(id);
 const _heroAttack = heroAttack;
@@ -223,19 +232,48 @@ heroAttack = function (h, f, ranged) {   // the dice of the party's first blows 
   return r;
 };
 const _castSpell = castSpell;
-castSpell = function (h, slot) { if (tutOn() && SPELLS[h.book[slot]].kind === 'dmg') TUT_CAST = true; return _castSpell.apply(this, arguments); };
-const tutSum = (start, mods) => `${start}${mods.map(m => ` ${m.txt.replace(/^([+−])/, '$1 ')}`).join('')}${mods.length ? ' = ' + mods[mods.length - 1].to : ''}`;
+castSpell = function (h, slot) {   // the first damage spell's dice explain the INT bonus
+  const sp = h.book[slot], n0 = FXQ.length, r = _castSpell.apply(this, arguments);
+  if (tutOn() && SPELLS[sp].kind === 'dmg' && !TUT_CAST && !tutSeen('magic')) { const d = FXQ.slice(n0).find(e => e.k === 'dice' && e.dmg); TUT_CAST = {h: h.name, sp, face: d ? d.val : 0, expr: SPELLS[sp].dice, mods: d ? d.mods || [] : []}; }
+  return r;
+};
+const _monsterAttack = monsterAttack;
+monsterAttack = function (f, h) {   // the first time a hero is hurt: DEX for AC, CON for HP
+  const hp0 = h.hp, r = _monsterAttack.apply(this, arguments);
+  if (tutOn() && h.hp < hp0 && !TUT_HURT && !tutSeen('hurt')) TUT_HURT = {h: h.name, f: nameOf(f), ac: heroAC(h)};
+  return r;
+};
+/* A roll written out as it appears on the dice: the face, then each bonus with the picture of where it came from. */
+const tutChip = m => `<span class="tut-mod">${m.ico || ''}<b>${m.txt}</b></span>`;
+const tutSum = (start, mods) => `<span class="tut-roll"><span class="tut-face">${start}</span>${mods.map(tutChip).join('')}${mods.length ? `<span class="tut-eq">= ${mods[mods.length - 1].to}</span>` : ''}</span>`;
+const tutIco = k => `<span class="tut-ico">${modIco.stat(k)}</span>`;
+const hasStat = (mods, k) => mods.some(m => m.ico === modIco.stat(k));
 function tutNext() {   // the window that should show now, if any
   const B = S.battle, cur = B.cur, h = cur && cur.side === 'p' && !B.over ? S.party[cur.i] : null, T = [];
   if (TUT_ATK) {
     const a = TUT_ATK;
-    if (!tutSeen('tohit')) T.push(['tohit', '.foes', 'TO HIT', `<p>Every attack starts with a d20. The hero's bonuses are added to the roll: their DEX, for a steady aim, and their weapon's own to-hit bonus. If the total equals or beats the enemy's AC, the blow lands.</p>
-      <p class="tut-eg">${esc(a.h)} rolled <b>${tutSum(a.nat, a.mods)}</b> against the ${esc(a.f)}'s AC ${a.ac}: <b>${a.hit ? 'a hit' : 'a miss'}</b>.</p><p>A natural 20 always hits and is a critical hit. A natural 1 always misses.</p>`]);
+    if (!tutSeen('tohit')) T.push(['tohit', '.foes', 'TO HIT', `<p>Every attack starts with a d20. Then the hero's bonuses fly in and are added to it, each one shown with the picture of where it comes from:</p>
+      <ul class="tut-list"><li>${tutIco('DEX')} <b>The feather is the DEX bonus</b>, from the hero's Dexterity. The higher you raise a hero's DEX, the better their chance to hit, and the higher their natural armour class, so they are harder to hit as well.</li>
+      <li><span class="tut-ico">${modIco.item(a.w)}</span> <b>The weapon's picture</b> is the weapon's own to-hit bonus. Better weapons strike truer.</li></ul>
+      <p>If the total equals or beats the enemy's AC, the blow lands.</p>
+      <p class="tut-eg">${esc(a.h)} rolled ${tutSum(a.nat, a.mods)} against the ${esc(a.f)}'s AC ${a.ac}: <b>${a.hit ? 'a hit' : 'a miss'}</b>.${hasStat(a.mods, 'DEX') ? '' : ` (${esc(a.h)}'s DEX is too low to add a bonus yet.)`}</p>
+      <p>A natural 20 always hits and is a critical hit. A natural 1 always misses.</p>`]);
     else if (tutSeen('damage') || !a.hit || !a.dmg) TUT_ATK = null;   // a miss: the damage window waits for the first hit
-    else T.push(['damage', '.foes', 'Damage', `<p>When an attack hits, the weapon's damage die is rolled and the hero's STR bonus is added. The enemy loses that many HP, and falls when it reaches 0. A critical hit deals half as much again.</p>
-      <p class="tut-eg">The ${esc(a.w)}'s ${a.dmg.expr} rolled <b>${tutSum(a.dmg.face, a.dmg.mods)}</b> damage.</p>`]);
+    else T.push(['damage', '.foes', 'Damage', `<p>When an attack hits, the weapon's damage dice are rolled, then its bonuses fly in:</p>
+      <ul class="tut-list"><li>${tutIco('STR')} <b>The crossed swords are the STR bonus</b>, from the hero's Strength. The more you raise a hero's STR, the harder every weapon blow lands.</li>
+      <li><span class="tut-ico">${modIco.item(a.w)}</span> Some weapons add damage of their own.</li></ul>
+      <p class="tut-eg">${/'s /.test(a.w) ? '' : 'The '}${esc(a.w)}'s ${a.dmg.expr} rolled ${tutSum(a.dmg.face, a.dmg.mods)} damage.${hasStat(a.dmg.mods, 'STR') ? '' : ` (${esc(a.h)}'s STR is too low to add a bonus yet.)`}</p>
+      <p>The enemy loses that many HP, and falls when it reaches 0. A critical hit deals half as much again.</p>`]);
   }
-  if (TUT_CAST && !tutSeen('magic')) T.push(['magic', '.foes', 'Magic never misses', `<p>A damage spell skips the to-hit roll. Its damage dice are rolled straight away and the caster's INT bonus is added. Each spell in a spellbook can be cast once, then it is spent until the party rests.</p>`]);
+  if (TUT_HURT && !tutSeen('hurt')) T.push(['hurt', '.roster', `${esc(TUT_HURT.h)} is hit!`, `<p>The ${esc(TUT_HURT.f)} rolled ${esc(TUT_HURT.h)}'s AC (${TUT_HURT.ac}) or higher. Two stats keep your heroes standing:</p>
+      <ul class="tut-list"><li>${tutIco('DEX')} <b>Dexterity (DEX)</b> raises a hero's armour class, so fewer blows land, and also their chance to hit.</li>
+      <li>${tutIco('CON')} <b>Constitution (CON)</b> raises the HP a hero gains every time they level up.</li></ul>
+      <p>Armour and shields add to AC too.</p>`]);
+  if (TUT_CAST && !tutSeen('magic')) { const c = TUT_CAST; T.push(['magic', '.foes', 'Magic never misses', `<p>A damage spell skips the to-hit roll. Its damage dice are rolled straight away, then the bonuses fly in:</p>
+      <ul class="tut-list"><li>${tutIco('INT')} <b>The glowing head is the INT bonus</b>, from the caster's Intelligence. The higher you raise a caster's INT, the harder every damage spell hits, and the more often Sleep and Entangle take hold.</li>
+      <li><span class="tut-ico">${modIco.item(c.sp)}</span> The spell's own bonus.</li></ul>
+      ${c.face ? `<p class="tut-eg">${esc(c.h)}'s ${esc(c.sp)} (${c.expr}) rolled ${tutSum(c.face, c.mods)} damage.</p>` : ''}
+      <p>Each spell in a spellbook can be cast once, then it is spent until the party rests.</p>`]); }
   if (h && !B.mode) {
     if (!tutSeen('foes')) T.push(['foes', '.foes', 'Your enemies', `<p>Three goblins and an orc. Each card shows the enemy's level, its HP, and its AC: the number on the shield.</p><p>AC is armour class. The higher it is, the harder that enemy is to hit.</p>`]);
     else if (!tutSeen('party')) T.push(['party', '.roster', 'Your party', `<p>Your heroes, level 5 veterans of the Duke's guard for this one night. The glowing card is the hero whose turn it is.</p><p>Each card shows HP, AC, and the <b>To hit</b> and <b>Damage</b> of their weapons. Monsters favour the front two.</p>`]);
@@ -246,10 +284,10 @@ function tutNext() {   // the window that should show now, if any
   if (cur && cur.side === 'm' && !B.over && !tutSeen('enemy') && tutSeen('tohit')) T.push(['enemy', '.roster', "The enemy's turn", `<p>Monsters attack the same way: a d20 plus their own to-hit bonus, against your hero's AC. Armour, a shield and good DEX all make their blows miss more often.</p>`]);
   return T[0] || null;
 }
-function tutClear() { if (TUT_EL) TUT_EL.remove(); TUT_EL = null; TUT_ATK = null; TUT_CAST = false; }
+function tutClear() { if (TUT_EL) TUT_EL.remove(); TUT_EL = null; TUT_ATK = null; TUT_CAST = null; TUT_HURT = null; }
 function tutCheck() {
   if (TUT_EL && (!tutOn() || S.battle.over)) tutClear();
-  if (!tutOn() || TUT_EL || Date.now() < INPUT_LOCK || !$('.foes')) return;
+  if (!tutOn() || TUT_EL || Date.now() < INPUT_LOCK || !$('.foes') || document.querySelector('.fx-die')) return;   // the dice finish their whole show first
   const t = tutNext(); if (!t) return;
   const [id, sel, title, html] = t, target = document.querySelector(sel);
   const el = document.createElement('div'); el.className = 'pro-tut'; TUT_EL = el;
@@ -267,7 +305,7 @@ function tutCheck() {
   };
   if (target) target.scrollIntoView({block: 'center', behavior: 'instant'});
   place(); requestAnimationFrame(place); el.onscroll = place; addEventListener('resize', place); el._place = place;
-  const close = () => { el.remove(); removeEventListener('resize', place); TUT_EL = null; S.prologue.tips.push(id); if (id === 'damage') TUT_ATK = null; if (id === 'magic') TUT_CAST = false; save(); setTimeout(tutCheck, 60); };
+  const close = () => { el.remove(); removeEventListener('resize', place); TUT_EL = null; S.prologue.tips.push(id); if (id === 'damage') TUT_ATK = null; if (id === 'magic') TUT_CAST = null; if (id === 'hurt') TUT_HURT = null; save(); setTimeout(tutCheck, 60); };
   el.querySelector('#tutOk').onclick = close;
   el.querySelector('#tutOff').onclick = () => { S.prologue.noTips = true; tutClear(); save(); };
 }

@@ -534,3 +534,9 @@ input[type=text]{font:inherit;background:#efe0bc;color:var(--ink);border:1px sol
 .tut-card{position:fixed;z-index:2;max-height:calc(100vh - 24px);overflow:auto;padding:14px 16px!important;box-shadow:0 10px 30px rgba(0,0,0,.6)}
 .tut-card h3{margin:0 0 6px;font-family:var(--label,Cinzel,serif)}.tut-card p{margin:0 0 8px}
 .tut-eg{background:rgba(120,80,30,.12);border-left:3px solid #8a6a3a;padding:6px 9px}
+.tut-list{margin:0 0 8px;padding-left:4px;list-style:none;display:grid;gap:6px}.tut-list li{position:relative;padding-left:30px;min-height:22px}.tut-list li>.tut-ico:first-child{position:absolute;left:0;top:1px}
+.tut-ico{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;background:#241a11;border:1px solid #5a4630;border-radius:4px;line-height:0}.tut-ico svg,.tut-ico img{width:16px;height:16px}
+.tut-roll{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;vertical-align:middle;margin:0 2px}
+.tut-face{font:800 .95rem var(--label);background:#2a1a0e;color:#f0dcb0;border-radius:4px;padding:1px 7px}
+.tut-mod{display:inline-flex;align-items:center;gap:3px;padding:1px 7px 1px 3px;border-radius:12px;background:rgba(22,13,6,.92);border:1px solid #c9a046;color:#ffe6b0}.tut-mod b{font:700 .8rem var(--label)}.tut-mod .dmi,.tut-mod svg,.tut-mod img{width:15px;height:15px}
+.tut-eq{font:800 .95rem var(--label)}

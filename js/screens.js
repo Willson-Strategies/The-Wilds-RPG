@@ -16,7 +16,7 @@ function screenTitle() {
     <div class="slots">${rows}</div>
   </div>`;
   document.querySelectorAll('[data-q-go]').forEach(b => b.onclick = () => playQuest(+b.dataset.qGo));
-  document.querySelectorAll('[data-q-new]').forEach(b => b.onclick = () => { QUEST = +b.dataset.qNew; S = null; draft = defaultDraft(); screenCreate(); });
+  document.querySelectorAll('[data-q-new]').forEach(b => b.onclick = () => newQuestPrologue(+b.dataset.qNew));   // the prologue comes first, then Raise Your Party (Build 119)
   document.querySelectorAll('[data-q-del]').forEach(b => b.onclick = () => {
     if (!b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Sure? Gone for good'; b.classList.add('red'); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = 'Abandon'; b.classList.remove('red'); } }, 3000); return; }
     try { localStorage.removeItem(questKey(+b.dataset.qDel)); } catch (e) {} screenTitle();
@@ -26,7 +26,7 @@ function screenTitle() {
    screen each slot remembers its rolls for every class, so switching class back and forth is not a reroll. */
 let DRAFT_ST = {};
 function defaultDraft() {
-  const picks = [['Fighter', 'Aldric'], ['Cleric', 'Mother Hesk'], ['Magic User', 'Velis'], ['Thief', 'Corvin']];
+  const picks = PRO_PARTY.map(([c, n]) => [c, n]);   // the prologue's four (Build 119)
   DRAFT_ST = {};
   const party = picks.map(([c, n]) => makeHero(c, n));
   party.forEach((h, i) => { DRAFT_ST[i + '|' + h.cls] = h.st; });
@@ -53,11 +53,10 @@ function screenCreate() {
     };
     $('#nm' + i).oninput = e => { draft[i].name = e.target.value; };
   });
-  $('#back').onclick = () => (S ? go() : screenTitle());   // a quest only exists once its party sets out
+  $('#back').onclick = () => (S && !S.raising ? go() : (save(), screenTitle()));   // after the prologue the quest waits on this screen
   $('#begin').onclick = () => {
     draft.forEach(h => Object.values(h.equip).forEach(it => { if (it && it.starter) { it.name = starterName(h.name, it.starter); regStarter(it); } }));
     S = {party: draft, gold: startGold(draft), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true};
-    beginPrologue();   // every new quest opens on the night the orcs came (Build 119)
     save(); go(); window.scrollTo({top: 0});
   };
 }
@@ -66,6 +65,7 @@ function go() {
   if (S && S.loc === 'castle' && !S.battle && S.events && S.events.warlordWon && !S.events.metMarmillian) { screenCastle(); return marmillianScene(); }
   if (forceCampOnce()) return screenEvent();
   if (S.prologue && !S.battle) return screenPrologue();
+  if (S.raising) { draft = S.party; DRAFT_ST = {}; draft.forEach((h, i) => { DRAFT_ST[i + '|' + h.cls] = h.st; }); return screenCreate(); }
   if (S.battle) return screenBattle();
   if (S.event && S.loc === 'wild') return screenEvent();
   if (S.loc === 'castle') return screenCastle();

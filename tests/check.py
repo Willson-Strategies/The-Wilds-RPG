@@ -26,11 +26,10 @@ def serve():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
 
-async def new_quest(pg):
-    await pg.click('[data-q-new]'); await pg.wait_for_timeout(200)
+async def new_quest(pg):   # since Build 119 a new quest opens on the prologue, then Raise Your Party
+    await pg.click('[data-q-new]'); await pg.wait_for_timeout(300)
+    await pg.click('#proSkip'); await pg.click('#proSkip'); await pg.wait_for_timeout(300)
     await pg.click('#begin'); await pg.wait_for_timeout(300)
-    if await pg.locator('#proSkip').count():   # Build 119: every new quest opens with the prologue
-        await pg.click('#proSkip'); await pg.click('#proSkip'); await pg.wait_for_timeout(300)
 
 async def main():
     page = 'preview.html' if TARGET.rstrip('/') == 'dist' else 'index.html'
@@ -46,30 +45,36 @@ async def main():
         title = await pg.text_content('header.bar')
         check('title screen loads and shows the build', bool(build) and f'Build {build}' in title, f'Build {build}')
 
-        # Build 119: the prologue. A new quest opens on the storm scene with the party at level 5; skipping it (or
-        # winning its battle) gives back the party exactly as raised, at level 1. Its Goblins and Orc never roam the wilds.
-        await pg.click('[data-q-new]'); await pg.wait_for_timeout(200)
-        raised = await pg.evaluate("JSON.stringify(draft.map(h => [h.name, h.cls, h.st, h.max]))")
-        await pg.click('#begin'); await pg.wait_for_timeout(400)
-        P = await pg.evaluate("({scene: !!document.querySelector('.pro-stage svg'), lv: S.party.map(h => h.level), stage: S.prologue && S.prologue.stage})")
-        check('a new quest opens on the prologue at level 5', P['scene'] and P['lv'] == [5, 5, 5, 5] and P['stage'] == 0, str(P))
+        # Build 119: the prologue. A new quest opens on the storm scene (no party screen first) with Odran, Rhovik,
+        # Veyra and Borska at level 5; afterwards Raise Your Party starts from those four at level 1. Its Goblins and Orc never roam.
+        await pg.click('[data-q-new]'); await pg.wait_for_timeout(400)
+        P = await pg.evaluate("({scene: !!document.querySelector('.pro-stage svg'), party: S.party.map(h => h.name + ':' + h.cls + ':' + h.level).join(), stage: S.prologue && S.prologue.stage})")
+        check('a new quest opens on the prologue with the four guards at level 5', P['scene'] and P['stage'] == 0 and P['party'] == 'Odran:Fighter:5,Rhovik:Thief:5,Veyra:Magic User:5,Borska:Dwarf:5', str(P))
+        keep = await pg.evaluate("JSON.stringify(JSON.parse(S.prologue.keep).map(h => [h.name, h.cls, h.st, h.max]))")
         for _ in range(3):
             await pg.click('#evSkip'); await pg.click('#proNext'); await pg.wait_for_timeout(1200)
         B = await pg.evaluate("S.battle ? S.battle.foes.map(f => f.name).join() + (S.battle.noFlee ? ' noflee' : '') : ''")
         check('the prologue battle is 3 Goblins and an Orc, no fleeing', B == 'Goblin,Goblin,Goblin,Orc noflee', B)
-        await pg.evaluate("S.prologue.noTips = true; S.battle.foes.forEach(f => { f.hp = 0; f.dead = true; }); checkEnd();")
+        # the prologue battle keeps the full dice show: dice on screen with their roll sounds
+        D = await pg.evaluate("""(async () => { S.prologue.noTips = true; const B = S.battle; delete B.phase; const i = S.party.findIndex(h => h.equip.melee);
+          B.cur = {side: 'p', i}; B.queue = []; INPUT_LOCK = 0; let snd = 0; const ds = diceSound; diceSound = (...x) => { snd++; return ds(...x); };
+          heroAttack(S.party[i], B.foes[0], false); render(); let seen = 0;
+          for (let k = 0; k < 20; k++) { await new Promise(r => setTimeout(r, 150)); seen = Math.max(seen, document.querySelectorAll('.fx-die').length); }
+          diceSound = ds; return {seen, snd}; })()""")
+        check('the prologue battle shows the dice and their sounds', D['seen'] >= 1 and D['snd'] >= 1, str(D))
+        await pg.evaluate("S.battle.foes.forEach(f => { f.hp = 0; f.dead = true; }); checkEnd();")
         for _ in range(40):
             if await pg.locator('.modal [data-close]').count(): break
             await pg.wait_for_timeout(250)
         await pg.click('.modal [data-close]'); await pg.wait_for_timeout(400)
         await pg.click('#evSkip'); await pg.click('#proNext'); await pg.wait_for_timeout(400)
-        back = await pg.evaluate("JSON.stringify(S.party.map(h => [h.name, h.cls, h.st, h.max]))")
-        check('after the prologue the party is back as raised, at level 1', back == raised and await pg.evaluate("!S.prologue && S.loc === 'castle' && S.party.every(h => h.level === 1)"))
+        back = await pg.evaluate("JSON.stringify(draft.map(h => [h.name, h.cls, h.st, h.max]))")
+        check('after the prologue, Raise Your Party starts from the four at level 1', back == keep and await pg.evaluate("!!document.querySelector('#begin') && draft.every(h => h.level === 1)"))
+        await pg.click('#begin'); await pg.wait_for_timeout(300)
         r = await pg.evaluate("(() => { let bad = 0; for (const reg of REGIONS) for (let i = 0; i < 3000; i++) if (pickMonsters(reg).some(m => SCRIPTED.includes(m.name))) bad++; return bad; })()")
         check('prologue monsters never appear in the wilds', r == 0, f'{r} encounters')
         await pg.evaluate("save(); leaveQuest(); screenTitle();"); await pg.wait_for_timeout(200)
-        await pg.click('[data-q-new]'); await pg.wait_for_timeout(200); await pg.click('#begin'); await pg.wait_for_timeout(300)
-        await pg.click('#proSkip'); await pg.click('#proSkip'); await pg.wait_for_timeout(300)
+        await new_quest(pg)
         check('a new quest starts at the castle', await pg.evaluate("S && S.loc === 'castle' && !S.prologue"))
 
         # every picture the game refers to must load
