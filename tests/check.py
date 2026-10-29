@@ -29,6 +29,8 @@ def serve():
 async def new_quest(pg):
     await pg.click('[data-q-new]'); await pg.wait_for_timeout(200)
     await pg.click('#begin'); await pg.wait_for_timeout(300)
+    if await pg.locator('#proSkip').count():   # Build 119: every new quest opens with the prologue
+        await pg.click('#proSkip'); await pg.click('#proSkip'); await pg.wait_for_timeout(300)
 
 async def main():
     page = 'preview.html' if TARGET.rstrip('/') == 'dist' else 'index.html'
@@ -44,8 +46,31 @@ async def main():
         title = await pg.text_content('header.bar')
         check('title screen loads and shows the build', bool(build) and f'Build {build}' in title, f'Build {build}')
 
-        await new_quest(pg)
-        check('a new quest starts at the castle', await pg.evaluate("S && S.loc === 'castle'"))
+        # Build 119: the prologue. A new quest opens on the storm scene with the party at level 5; skipping it (or
+        # winning its battle) gives back the party exactly as raised, at level 1. Its Goblins and Orc never roam the wilds.
+        await pg.click('[data-q-new]'); await pg.wait_for_timeout(200)
+        raised = await pg.evaluate("JSON.stringify(draft.map(h => [h.name, h.cls, h.st, h.max]))")
+        await pg.click('#begin'); await pg.wait_for_timeout(400)
+        P = await pg.evaluate("({scene: !!document.querySelector('.pro-stage svg'), lv: S.party.map(h => h.level), stage: S.prologue && S.prologue.stage})")
+        check('a new quest opens on the prologue at level 5', P['scene'] and P['lv'] == [5, 5, 5, 5] and P['stage'] == 0, str(P))
+        for _ in range(3):
+            await pg.click('#evSkip'); await pg.click('#proNext'); await pg.wait_for_timeout(1200)
+        B = await pg.evaluate("S.battle ? S.battle.foes.map(f => f.name).join() + (S.battle.noFlee ? ' noflee' : '') : ''")
+        check('the prologue battle is 3 Goblins and an Orc, no fleeing', B == 'Goblin,Goblin,Goblin,Orc noflee', B)
+        await pg.evaluate("S.prologue.noTips = true; S.battle.foes.forEach(f => { f.hp = 0; f.dead = true; }); checkEnd();")
+        for _ in range(40):
+            if await pg.locator('.modal [data-close]').count(): break
+            await pg.wait_for_timeout(250)
+        await pg.click('.modal [data-close]'); await pg.wait_for_timeout(400)
+        await pg.click('#evSkip'); await pg.click('#proNext'); await pg.wait_for_timeout(400)
+        back = await pg.evaluate("JSON.stringify(S.party.map(h => [h.name, h.cls, h.st, h.max]))")
+        check('after the prologue the party is back as raised, at level 1', back == raised and await pg.evaluate("!S.prologue && S.loc === 'castle' && S.party.every(h => h.level === 1)"))
+        r = await pg.evaluate("(() => { let bad = 0; for (const reg of REGIONS) for (let i = 0; i < 3000; i++) if (pickMonsters(reg).some(m => SCRIPTED.includes(m.name))) bad++; return bad; })()")
+        check('prologue monsters never appear in the wilds', r == 0, f'{r} encounters')
+        await pg.evaluate("save(); leaveQuest(); screenTitle();"); await pg.wait_for_timeout(200)
+        await pg.click('[data-q-new]'); await pg.wait_for_timeout(200); await pg.click('#begin'); await pg.wait_for_timeout(300)
+        await pg.click('#proSkip'); await pg.click('#proSkip'); await pg.wait_for_timeout(300)
+        check('a new quest starts at the castle', await pg.evaluate("S && S.loc === 'castle' && !S.prologue"))
 
         # every picture the game refers to must load
         bad = await pg.evaluate("""(async () => { const all = [...Object.values(ICON).flat(), ...Object.values(HEADS), ...Object.values(FULL), ...Object.values(MONS), ...CAMP];

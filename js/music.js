@@ -7,7 +7,7 @@ const musicTracks = {};
 let musicOn = (() => { try { return localStorage.getItem('baseline_music') !== 'off'; } catch (e) { return true; } })();
 const MUSIC_VOL = .55;
 const ambushOK = () => { const t = musicTracks.ambush; return !!t && !t.a.error; };   // only falls back to the battle music if the track fails to load
-function musicFor() { if (!S) return 'castle'; if ((S.battle && S.battle.boss) || (S.event && (S.event.id === 'beastcamp' || S.event.id === 'warlord') && S.event.revealed)) return ambushOK() ? 'ambush' : 'battle'; if (S.battle) return 'battle'; return S.loc === 'castle' ? 'castle' : 'road'; }
+function musicFor() { if (!S) return 'castle'; if (S.prologue && !S.battle) return 'none'; if ((S.battle && S.battle.boss && S.battle.boss !== 'prologue') || (S.event && (S.event.id === 'beastcamp' || S.event.id === 'warlord') && S.event.revealed)) return ambushOK() ? 'ambush' : 'battle'; if (S.battle) return 'battle'; return S.loc === 'castle' ? 'castle' : 'road'; }
 function ensureAudio() {
   if (AC) return;
   const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
@@ -25,8 +25,9 @@ function ensureAudio() {
 function ramp(g, to, secs) { const t = AC.currentTime; g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(to, t + secs); }
 function setMusic(key) {
   if (!AC || key === curTrack) return;
+  if (key === 'none') { if (curTrack) { const o = musicTracks[curTrack], was = curTrack; ramp(o.g, 0, 2); setTimeout(() => { if (curTrack !== was) o.a.pause(); }, 2150); } curTrack = 'none'; return; }   // the prologue's storm plays alone
   const fade = key === 'battle' || curTrack === 'battle' || key === 'ambush' ? 1.2 : 2.2;
-  if (curTrack) { const o = musicTracks[curTrack], was = curTrack; ramp(o.g, 0, fade); setTimeout(() => { if (curTrack !== was) o.a.pause(); }, fade * 1000 + 150); }
+  if (curTrack && curTrack !== 'none') { const o = musicTracks[curTrack], was = curTrack; ramp(o.g, 0, fade); setTimeout(() => { if (curTrack !== was) o.a.pause(); }, fade * 1000 + 150); }
   const n = musicTracks[key];
   if (key === 'battle' || (key === 'ambush' && curTrack !== 'battle')) n.a.currentTime = 0;   // every fight starts its music from the top; the castle and road pick up where they left off
   n.a.play().catch(() => {});

@@ -494,3 +494,43 @@ input[type=text]{font:inherit;background:#efe0bc;color:var(--ink);border:1px sol
 @keyframes lvlaura{50%{box-shadow:0 0 0 2px #ffd77a,0 0 30px 9px rgba(255,210,90,.9)}}
 .fx-die.judged:not(.missed):not(.crit){filter:drop-shadow(0 0 9px rgba(255,214,110,1)) drop-shadow(0 0 22px rgba(255,180,60,.75)) drop-shadow(0 3px 3px rgba(0,0,0,.7));transition:filter .25s}   /* every hit glows gold (Build 117) */
 .fx-die.crit.judged{filter:drop-shadow(0 0 9px #ffb347) drop-shadow(0 0 20px rgba(255,120,40,.7)) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
+/* ---- prologue (Build 119): storm scenes and tutorial windows ---- */
+.pro{max-width:980px;margin:0 auto}
+.pro-stage{position:relative;aspect-ratio:16/9;overflow:hidden;border:2px solid #2a1d10;border-radius:3px;background:#05060a;box-shadow:inset 0 0 40px rgba(0,0,0,.8),0 6px 20px rgba(30,15,5,.45);margin-bottom:14px}
+.pro-svg{position:absolute;inset:0;width:100%;height:100%;display:block;transition:filter .08s}
+.pro-stage.lit .pro-svg{filter:brightness(2.6) contrast(1.15) saturate(.6)}
+.pro-rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pro-flash{position:absolute;inset:0;pointer-events:none;background:#dfe8ff;opacity:0;mix-blend-mode:screen}
+.pro-flash.go{animation:proflash .9s ease-out}
+@keyframes proflash{0%{opacity:.85}8%{opacity:.1}16%{opacity:.6}40%{opacity:.05}100%{opacity:0}}
+.pro-flash-page{position:fixed;z-index:4}
+#proRainOver{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:4}
+.pro-clouds{animation:prodrift 40s linear infinite alternate}
+@keyframes prodrift{to{transform:translateX(-60px)}}
+.pro-win{animation:prowin 3s steps(1) infinite}.pro-win:nth-of-type(3n){animation-delay:-1.3s}.pro-win:nth-of-type(2n){animation-duration:4.2s}
+@keyframes prowin{0%,100%{opacity:1}47%{opacity:.55}52%{opacity:1}80%{opacity:.8}}
+.pro-flag{transform-box:fill-box;transform-origin:0 50%;animation:proflag .5s ease-in-out infinite alternate}
+@keyframes proflag{to{transform:scaleX(.7) skewY(-8deg)}}
+.pro-cloak{transform-box:fill-box;transform-origin:100% 0;animation:proflag .7s ease-in-out infinite alternate}
+.pro-rear>g{transform-box:fill-box;transform-origin:20% 100%;animation:prorear 2.6s ease-in-out infinite}
+@keyframes prorear{0%,100%{transform:rotate(0)}40%,60%{transform:rotate(-7deg)}}
+.pro-toss>g{transform-box:fill-box;transform-origin:50% 100%;animation:prorear 1.7s ease-in-out infinite reverse}
+.pro-torch{animation:protorch .3s ease-in-out infinite alternate}.pro-fire{transform-box:fill-box;transform-origin:50% 100%;animation:profire .18s ease-in-out infinite alternate}
+@keyframes protorch{to{opacity:.65}}@keyframes profire{to{transform:scaleY(.7) skewX(8deg)}}
+.pro-climb{animation:proclimb 7s linear infinite}.pro-climb2{animation-delay:-3.5s}
+@keyframes proclimb{from{translate:0 40px}to{translate:12px -120px}}
+.pro-fall{opacity:0;animation:profall 5.5s ease-in infinite 1s}.pro-fall2{animation-delay:3.2s}.pro-fall3{animation-delay:4.6s}
+@keyframes profall{0%{opacity:0;translate:0 0;rotate:0deg}4%{opacity:1}30%{opacity:1;translate:30px 360px;rotate:160deg}31%,100%{opacity:0;translate:30px 360px}}
+.pro-charge{transform-box:fill-box;transform-origin:50% 100%;animation:procharge 5s ease-in forwards 1.5s;transform:translateY(30px) scale(.55);opacity:.9}
+@keyframes procharge{from{transform:translateY(30px) scale(.55)}to{transform:translateY(0) scale(1)}}
+.pro-go .pro-charge{animation:procharge .8s ease-in forwards}
+.pro-smoke{animation:prosmoke 6s ease-in-out infinite alternate}@keyframes prosmoke{to{translate:-26px -10px;opacity:.25}}
+.pro-puddle{animation:protorch 1s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){.pro-stage *{animation:none!important}.pro-charge{transform:none}}
+.pro-tut{position:fixed;inset:0;z-index:180}
+.tut-block{position:fixed;inset:0}
+.tut-ring{position:fixed;border:2px solid var(--gold,#c9a046);border-radius:6px;box-shadow:0 0 0 9999px rgba(8,5,2,.62),0 0 18px rgba(230,190,90,.7);pointer-events:none;animation:tutglow 1.4s ease-in-out infinite alternate}
+@keyframes tutglow{to{box-shadow:0 0 0 9999px rgba(8,5,2,.62),0 0 30px rgba(240,200,100,.95)}}
+.tut-card{position:fixed;z-index:2;max-height:calc(100vh - 24px);overflow:auto;padding:14px 16px!important;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.tut-card h3{margin:0 0 6px;font-family:var(--label,Cinzel,serif)}.tut-card p{margin:0 0 8px}
+.tut-eg{background:rgba(120,80,30,.12);border-left:3px solid #8a6a3a;padding:6px 9px}

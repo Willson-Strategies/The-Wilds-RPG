@@ -68,7 +68,7 @@ function render() {
       ${B.mode && B.mode !== 'cast' ? `<span class="note" style="color:var(--ink-soft);flex-basis:100%">${targetAlly ? 'Choose an ally from the party list.' : 'Choose a target.'}</span>` : ''}
     </div>`;
   } else act = `<div class="actions"><span class="note">${B.over ? (lost ? 'Your party falls…' : 'The last foe falls…') : 'The enemy moves…'}</span></div>`;
-  $('#app').innerHTML = header() + `<div class="main"><div style="display:grid;gap:12px;min-width:0"><div class="parch panel"><h2>${B.boss === 'beastcamp' ? BOSS_TITLE : B.boss === 'warlord' ? WARLORD_TITLE : 'Battle · ' + region().name}</h2><p class="sub">Round ${B.round}. Monsters favour the front two of your party.</p>
+  $('#app').innerHTML = header() + `<div class="main"><div style="display:grid;gap:12px;min-width:0"><div class="parch panel"><h2>${B.boss === 'beastcamp' ? BOSS_TITLE : B.boss === 'warlord' ? WARLORD_TITLE : B.boss === 'prologue' ? 'The Castle Gate' : 'Battle · ' + region().name}</h2><p class="sub">Round ${B.round}. Monsters favour the front two of your party.</p>
     <div class="foes">${foes}</div>${act}</div>
     <div class="log" aria-live="polite">${B.log.slice(hideLog).map(l => `<div>${l}</div>`).join('')}</div></div>
     ${roster((x, i) => (cur && cur.side === 'p' && cur.i === i ? 'active ' : '') + (targetAlly && !x.dead ? 'targetable clickable' : ''))}</div>`;

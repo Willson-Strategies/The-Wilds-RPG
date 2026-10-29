@@ -3,6 +3,12 @@
 Newest first. One short entry per build: what changed for the player, and why when it matters.
 Rule changes are also made in the "RPG Base line" Google Doc. The repository history has every line-by-line change.
 
+## Build 119 · 29 Oct 2026
+- **A prologue for every new quest.** After raising the party, the quest opens on a stormy night at the castle: four drawn scenes with falling rain, lightning that lights up the picture, thunder, and frightened horses in the stables. The Duke warns his elite guard that orcs are almost at the walls; the party runs to the main gate to find orcs and goblins scaling it, some falling to their deaths, and three goblins and a hulking orc rush them. The storm sounds are made in the browser; there is no music until the fight.
+- **The first battle is a tutorial.** The party fights as level 5 heroes (spellbooks filled for the night) against 3 Goblins and an Orc, both new level 4 monsters that appear only here. No fleeing. Windows point at what's on screen and explain the enemy cards and AC, the party cards, the actions, choosing a target and Roll needed, then TO HIT and damage using the numbers of the party's own first blows, then the enemy's turn and spells. The enemy waits while a window is open. "Skip the tutorial" turns the windows off.
+- If the party falls, the Duke's guard pull them back and the fight starts again. After the win, a dawn scene: the Duke charges the party to find allies in the wilds, and the quest begins at the castle with the party exactly as raised, at level 1.
+- "Skip the prologue" goes straight to the castle. Quests already under way are not affected.
+
 ## Build 118 · 29 Oct 2026
 - **Spell cries wait for the dice.** When a Magic User or Cleric casts a damage spell (Magic Missile, Fireball, Lightning Bolt, Undead Ward, Undead Abyss), their cry of effort now sounds as the spell is fired, after the damage dice have rolled and added up. Before, the cry played the moment the spell was chosen, during the roll. Fireball's cry comes as the fireball leaves the caster's hands. Healing, Sleep, Entangle and other spells with no damage roll are unchanged.
 

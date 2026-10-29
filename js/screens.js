@@ -57,13 +57,15 @@ function screenCreate() {
   $('#begin').onclick = () => {
     draft.forEach(h => Object.values(h.equip).forEach(it => { if (it && it.starter) { it.name = starterName(h.name, it.starter); regStarter(it); } }));
     S = {party: draft, gold: startGold(draft), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true};
-    save(); go();
+    beginPrologue();   // every new quest opens on the night the orcs came (Build 119)
+    save(); go(); window.scrollTo({top: 0});
   };
 }
 function go() {
   stopTimers(); registerStarters(); hidePreview();
   if (S && S.loc === 'castle' && !S.battle && S.events && S.events.warlordWon && !S.events.metMarmillian) { screenCastle(); return marmillianScene(); }
   if (forceCampOnce()) return screenEvent();
+  if (S.prologue && !S.battle) return screenPrologue();
   if (S.battle) return screenBattle();
   if (S.event && S.loc === 'wild') return screenEvent();
   if (S.loc === 'castle') return screenCastle();
