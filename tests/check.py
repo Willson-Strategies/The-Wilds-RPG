@@ -116,7 +116,7 @@ async def main():
           const v = victory; victory = function () { W.victoryAt = performance.now(); W.dice = document.querySelectorAll('.fx-die').length; W.shownHP = [...document.querySelectorAll('[data-hpt^=m]')].map(x => x.textContent).join(); return v.apply(this, arguments); };
           setInterval(() => { const rolling = [...document.querySelectorAll('.fx-die')].filter(d => !d.classList.contains('settled')).length;
             if (document.querySelector('.fx-die')) W.lastDie = performance.now(); if (rolling && document.querySelector('#aMelee')) W.clickWhileDice++;}, 40); })()""")
-        for _ in range(400):
+        for _ in range(1500):   # dice add their modifiers slowly since Build 117
             if not await pg.evaluate("!!S.battle"): break
             if await pg.locator('#aMelee').count():
                 try:
