@@ -253,15 +253,15 @@ function tutNext() {   // the window that should show now, if any
   if (TUT_ATK) {
     const a = TUT_ATK;
     if (!tutSeen('tohit')) T.push(['tohit', '.foes', 'TO HIT', `<p>Every attack starts with a d20. Then the hero's bonuses fly in and are added to it, each one shown with the picture of where it comes from:</p>
-      <ul class="tut-list"><li>${tutIco('DEX')} <b>The feather is the DEX bonus</b>, from the hero's Dexterity. The higher you raise a hero's DEX, the better their chance to hit, and the higher their natural armour class, so they are harder to hit as well.</li>
-      <li><span class="tut-ico">${modIco.item(a.w)}</span> <b>The weapon's picture</b> is the weapon's own to-hit bonus. Better weapons strike truer.</li></ul>
+      <ul class="tut-list"><li>${tutIco('DEX')} <b>This icon shows any DEX bonus</b>, from the hero's Dexterity. The higher you raise a hero's DEX, the better their chance to hit, and the higher their natural armour class, so they are harder to hit as well.</li>
+      <li><span class="tut-ico">${modIco.item(a.w)}</span> <b>This icon</b> is the weapon's own to-hit bonus. Some weapons are more accurate than others.</li></ul>
       <p>If the total equals or beats the enemy's AC, the blow lands.</p>
       <p class="tut-eg">${esc(a.h)} rolled ${tutSum(a.nat, a.mods)} against the ${esc(a.f)}'s AC ${a.ac}: <b>${a.hit ? 'a hit' : 'a miss'}</b>.${hasStat(a.mods, 'DEX') ? '' : ` (${esc(a.h)}'s DEX is too low to add a bonus yet.)`}</p>
       <p>A natural 20 always hits and is a critical hit. A natural 1 always misses.</p>`]);
     else if (tutSeen('damage') || !a.hit || !a.dmg) TUT_ATK = null;   // a miss: the damage window waits for the first hit
     else T.push(['damage', '.foes', 'Damage', `<p>When an attack hits, the weapon's damage dice are rolled, then its bonuses fly in:</p>
-      <ul class="tut-list"><li>${tutIco('STR')} <b>The crossed swords are the STR bonus</b>, from the hero's Strength. The more you raise a hero's STR, the harder every weapon blow lands.</li>
-      <li><span class="tut-ico">${modIco.item(a.w)}</span> Some weapons add damage of their own.</li></ul>
+      <ul class="tut-list"><li>${tutIco('STR')} <b>This icon shows any STR bonus</b>, from the hero's Strength. The more you raise a hero's STR, the harder every weapon blow lands.</li>
+      <li><span class="tut-ico">${modIco.item(a.w)}</span> Weapons also have their own damage characteristics.</li></ul>
       <p class="tut-eg">${/'s /.test(a.w) ? '' : 'The '}${esc(a.w)}'s ${a.dmg.expr} rolled ${tutSum(a.dmg.face, a.dmg.mods)} damage.${hasStat(a.dmg.mods, 'STR') ? '' : ` (${esc(a.h)}'s STR is too low to add a bonus yet.)`}</p>
       <p>The enemy loses that many HP, and falls when it reaches 0. A critical hit deals half as much again.</p>`]);
   }
@@ -270,16 +270,16 @@ function tutNext() {   // the window that should show now, if any
       <li>${tutIco('CON')} <b>Constitution (CON)</b> raises the HP a hero gains every time they level up.</li></ul>
       <p>Armour and shields add to AC too.</p>`]);
   if (TUT_CAST && !tutSeen('magic')) { const c = TUT_CAST; T.push(['magic', '.foes', 'Magic never misses', `<p>A damage spell skips the to-hit roll. Its damage dice are rolled straight away, then the bonuses fly in:</p>
-      <ul class="tut-list"><li>${tutIco('INT')} <b>The glowing head is the INT bonus</b>, from the caster's Intelligence. The higher you raise a caster's INT, the harder every damage spell hits, and the more often Sleep and Entangle take hold.</li>
+      <ul class="tut-list"><li>${tutIco('INT')} <b>This icon shows any INT bonus</b>, from the caster's Intelligence. The higher you raise a caster's INT, the harder every damage spell hits, and the more often Sleep and Entangle take hold.</li>
       <li><span class="tut-ico">${modIco.item(c.sp)}</span> The spell's own bonus.</li></ul>
       ${c.face ? `<p class="tut-eg">${esc(c.h)}'s ${esc(c.sp)} (${c.expr}) rolled ${tutSum(c.face, c.mods)} damage.</p>` : ''}
       <p>Each spell in a spellbook can be cast once, then it is spent until the party rests.</p>`]); }
   if (h && !B.mode) {
     if (!tutSeen('foes')) T.push(['foes', '.foes', 'Your enemies', `<p>Three goblins and an orc. Each card shows the enemy's level, its HP, and its AC: the number on the shield.</p><p>AC is armour class. The higher it is, the harder that enemy is to hit.</p>`]);
-    else if (!tutSeen('party')) T.push(['party', '.roster', 'Your party', `<p>Your heroes, level 5 veterans of the Duke's guard for this one night. The glowing card is the hero whose turn it is.</p><p>Each card shows HP, AC, and the <b>To hit</b> and <b>Damage</b> of their weapons. Monsters favour the front two.</p>`]);
-    else if (!tutSeen('actions')) T.push(['actions', '.actions', 'Choose an action', `<p><b>Attack</b> swings the hero's melee weapon. <b>Shoot</b> uses their ranged weapon from a distance, which gives +2 AC until their next turn. <b>Cast</b> opens their spellbook. <b>Wait</b> skips the turn.</p><p>There is no fleeing from this fight. ${h.equip.melee ? 'Choose <b>Attack</b>.' : 'Choose <b>Cast</b>.'}</p>`]);
+    else if (!tutSeen('party')) T.push(['party', '.roster', 'Your party', `<p>Your heroes, a group of veterans of the Duke's guard. The glowing card is the hero whose turn it is.</p><p>Each card shows HP, AC, and the <b>To hit</b> and <b>Damage</b> of their weapons. Monsters typically target the front two party members more often when attacking.</p>`]);
+    else if (!tutSeen('actions')) T.push(['actions', '.actions', 'Choose an action', `<p><b>Attack</b> swings the hero's melee weapon. <b>Shoot</b> uses their ranged weapon. <b>Cast</b> opens their spellbook. <b>Wait</b> skips the turn.</p><p>There is no fleeing from this fight. ${h.equip.melee ? 'Choose <b>Attack</b>.' : 'Choose <b>Cast</b>.'}</p>`]);
   }
-  if (h && (B.mode === 'melee' || B.mode === 'ranged') && !tutSeen('target')) T.push(['target', '.foe.targetable', 'Choose a target', `<p>Hover over an enemy (or press and hold on a phone) to see the odds before you strike. <b>Roll needed</b> is the lowest number the d20 must show to hit.</p><p>Then click the enemy to attack it.</p>`]);
+  if (h && (B.mode === 'melee' || B.mode === 'ranged') && !tutSeen('target')) T.push(['target', '.foe.targetable', 'Choose a target', `<p>Hover over an enemy to see details about the enemy and how your hit may affect it.</p><p>Then click the enemy to attack it.</p>`]);
   if (h && B.mode === 'cast' && !tutSeen('cast')) T.push(['cast', '.spellpick', 'The spellbook', `<p>Pick a spell, then its target. Spent spells are greyed out until the party rests.</p>`]);
   if (cur && cur.side === 'm' && !B.over && !tutSeen('enemy') && tutSeen('tohit')) T.push(['enemy', '.roster', "The enemy's turn", `<p>Monsters attack the same way: a d20 plus their own to-hit bonus, against your hero's AC. Armour, a shield and good DEX all make their blows miss more often.</p>`]);
   return T[0] || null;
