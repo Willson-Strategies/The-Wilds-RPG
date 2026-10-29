@@ -70,7 +70,10 @@ async def main():
                 if await pg.locator('.modal [data-close]').count() or await pg.locator('#evScroll').count(): break
                 await pg.wait_for_timeout(250)
             if await pg.locator('.modal [data-close]').count(): await pg.click('.modal [data-close]'); await pg.wait_for_timeout(400)
+        await pg.evaluate("S.party[0].hp = 2; S.party[2].hp = 0; S.party[2].dead = true; S.party[2].used = S.party[2].used.map(() => 1);")
         await win()
+        full = await pg.evaluate("S.party.every(h => !h.dead && h.hp === h.max && h.used.every(u => !u))")
+        check('between the two fights everyone is revived with full HP and spells', full)
         # the courtyard: pick two to stay; Ithrel and Brother Hale take their places against the Giant Orc
         await pg.click('#evSkip'); await pg.wait_for_timeout(200)
         dis = await pg.evaluate("$('#proNext').disabled")
@@ -79,6 +82,10 @@ async def main():
         Y = await pg.evaluate("({party: S.party.map(h => h.name + ':' + h.level).join(), foes: S.battle && S.battle.foes.map(f => f.name).join()})")
         check('two picked heroes are swapped for Ithrel and Brother Hale against the Giant Orc', dis and Y['party'] == 'Odran:5,Ithrel:5,Veyra:5,Brother Hale:5' and Y['foes'] == 'Giant Orc', str(Y))
         keep = await pg.evaluate("JSON.stringify(S.party.map(h => JSON.parse(S.prologue.l1[h.id])).map(h => [h.name, h.cls, h.st, h.max]))")
+        old = await pg.evaluate("(() => { const f = S.battle.foes[0]; f.max = f.hp = 65; f.dmg = '2D6+4'; S.party[0].hp = 1; go(); const g = S.battle.foes[0]; return [g.max, g.dmg, S.party[0].hp === S.party[0].max]; })()")
+        check('a saved courtyard fight with the old Giant Orc restarts with the new one', old == [40, '2D6+2', True], str(old))
+        await pg.wait_for_timeout(300)
+        if await pg.locator('#eFight').count(): await pg.click('#eFight'); await pg.wait_for_timeout(1300)
         await win()
         sink = await pg.evaluate("S.prologue && S.prologue.stage === 4 && !!document.querySelector('.pro-sinking')")
         check('the prologue ends with the castle sinking into the earth', sink)

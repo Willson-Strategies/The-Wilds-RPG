@@ -55,8 +55,8 @@ const PRO_SCENES = [
 let PRO_PICK = [];
 function screenPrologue() {
   const P = S.prologue, sc = PRO_SCENES[P.stage], yard = P.stage === 3;
-  const picks = yard ? `<div class="pro-picks">${S.party.map((h, i) => `<button class="pro-pick${PRO_PICK.includes(i) ? ' on' : ''}" data-pick="${i}"><img src="${HEADS[h.cls]}" alt=""><span><b>${esc(h.name)}</b><i>${h.cls} · HP ${h.dead ? 0 : h.hp} / ${h.max}${h.dead ? ' · fallen' : ''}</i></span><em>Stays at the gate</em></button>`).join('')}</div>
-    <p class="note pro-picknote">Choose two to stay behind. Their HP carries over from the gate, so the wounded may be best left behind.</p>` : '';
+  const picks = yard ? `<div class="pro-picks">${S.party.map((h, i) => `<button class="pro-pick${PRO_PICK.includes(i) ? ' on' : ''}" data-pick="${i}"><img src="${HEADS[h.cls]}" alt=""><span><b>${esc(h.name)}</b><i>${h.cls} · Level ${h.level}</i></span><em>Stays at the gate</em></button>`).join('')}</div>
+    <p class="note pro-picknote">Choose two to stay behind.</p>` : '';
   $('#app').innerHTML = `<header class="bar"><h1>Base Line</h1><div class="meta"><span>Prologue</span><span>Night</span></div><button class="btn small" id="musicbtn" style="margin-left:auto" aria-pressed="${musicOn}">♪ Sound ${musicOn ? 'on' : 'off'}</button><button class="btn small" id="questsbtn">Quests</button></header>
   <div class="pro parch panel"><div class="pro-stage pro-${sc.art}">${proArt(sc.art)}<canvas class="pro-rain"></canvas><div class="pro-flash"></div></div>
     <div class="scroll" id="evScroll"><h2>${sc.title}</h2><div class="type">${sc.text}</div><button class="ev-skip" id="evSkip">Skip</button></div>
@@ -78,7 +78,6 @@ function screenPrologue() {
     if (P.stage === 2 || P.stage === 3) {
       if (yard) {   // the two picked stay at the gate; Ithrel and Brother Hale take their places in the marching order
         const help = JSON.parse(P.help); PRO_PICK.sort((a, b) => a - b).forEach((i, k) => { S.party[i] = help[k]; });
-        S.party.forEach(h => { if (h.dead) { h.dead = false; h.hp = Math.max(1, Math.round(h.max / 4)); } h.status = {}; });
         PRO_PICK = []; P.fight = 2;
       }
       const st = $('.pro-stage'); st.classList.add('pro-go'); proThunder(.9, 0); setTimeout(proBattle, 900); return;
@@ -96,7 +95,7 @@ function proBattle() {
 function prologueWon() {
   tutClear(); S.battle = null;
   if (S.prologue.fight === 2) { S.prologue.stage = 4; save(); return go(); }
-  S.prologue.stage = 3; save();
+  S.prologue.stage = 3; proRestore(); save();
   modal(`<h2>The Gate Holds</h2><p>The orc crashes to the cobbles and does not rise. Along the walls, the rest of the war band breaks and flees into the storm.</p><div class="row"><button class="btn red" data-close>Onward</button></div>`, () => go());
 }
 function prologueLost() {
@@ -105,6 +104,15 @@ function prologueLost() {
   modal(yard ? `<h2>Not Yet</h2><p>The giant orc's club sends you sprawling across the cobbles. Brother Hale drags you into the chapel doorway and prays over you until your eyes open. The orc is still in the courtyard.</p><div class="row"><button class="btn red" data-close>Back into the fight</button></div>`
     : `<h2>Not Yet</h2><p>You go down beneath the goblins' blades, but the Duke's guard drag you back behind their shields and pour wine down your throats. The gate still stands, just. The orc is coming again.</p><div class="row"><button class="btn red" data-close>Raise your weapons</button></div>`, () => proBattle());
 }
+/* Between the two fights everyone is quietly back on their feet, with full HP and every spell. */
+function proRestore() { S.party.forEach(h => { h.dead = false; h.hp = h.max; h.status = {}; h.used = h.book.map(() => false); delete h.fellInBattle; }); }
+/* A courtyard fight saved with an older Giant Orc (65 HP, 2D6+4) starts again with today's numbers, everyone restored. */
+const _goPro = go;
+go = function () {
+  const B = S && S.prologue && S.battle, f = B && B.boss === 'prologue' && S.prologue.fight === 2 && B.foes.find(x => x.name === 'Giant Orc'), m = DATA.monsters.find(x => x.name === 'Giant Orc');
+  if (f && (f.max !== m.hp || f.dmg !== m.dmg)) { S.party = JSON.parse(S.prologue.pre); proRestore(); S.battle = null; save(); proBattle(); return; }
+  return _goPro.apply(this, arguments);
+};
 /* The battle and its result screens go to the prologue's own endings while it lasts. */
 const _victory = victory, _defeat = defeat;
 victory = function () { return S && S.battle && S.battle.boss === 'prologue' ? prologueWon() : _victory.apply(this, arguments); };
