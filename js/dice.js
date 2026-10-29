@@ -122,17 +122,19 @@ function verdictSound(hit) {
   if (!AC || AC.state !== 'running') return;
   const t = AC.currentTime + .01;
   if (hit) {
-    [[110, .05], [165, .04], [220, .035], [330.5, .018], [441, .01]].forEach(([f, v], k) => {
+    // Louder, brighter and quicker than before so it is never lost under the music or the next die (Build 117).
+    if (musicBus) { const m = musicBus.gain, v = MUSIC_VOL; m.cancelScheduledValues(t); m.setValueAtTime(m.value, t); m.linearRampToValueAtTime(v * .55, t + .06); m.linearRampToValueAtTime(v, t + .9); }
+    [[220, .07], [330, .055], [440, .045], [660, .03], [880, .022], [1320, .014]].forEach(([f, v], k) => {
       const o = AC.createOscillator(), g = AC.createGain(); o.type = k ? 'sine' : 'triangle';
-      o.frequency.setValueAtTime(f * .985, t); o.frequency.linearRampToValueAtTime(f * (1 + k * .002), t + .5);
-      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .14); g.gain.exponentialRampToValueAtTime(.0001, t + 1.1);
-      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.15);
+      o.frequency.setValueAtTime(f * .99, t); o.frequency.linearRampToValueAtTime(f * (1 + k * .003), t + .5);
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .05 + k * .02); g.gain.exponentialRampToValueAtTime(.0001, t + 1);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.05);
     });
     const n = AC.createBufferSource(), bp = AC.createBiquadFilter(), ng = AC.createGain();
-    n.buffer = noiseBuf(.9); bp.type = 'bandpass'; bp.Q.value = 6;
-    bp.frequency.setValueAtTime(600, t); bp.frequency.exponentialRampToValueAtTime(2600, t + .7);
-    ng.gain.setValueAtTime(.0001, t); ng.gain.exponentialRampToValueAtTime(.05, t + .25); ng.gain.exponentialRampToValueAtTime(.0001, t + .9);
-    n.connect(bp); bp.connect(ng); ng.connect(sfxBus); n.start(t); n.stop(t + .9);
+    n.buffer = noiseBuf(.8); bp.type = 'bandpass'; bp.Q.value = 5;
+    bp.frequency.setValueAtTime(1500, t); bp.frequency.exponentialRampToValueAtTime(6500, t + .6);
+    ng.gain.setValueAtTime(.0001, t); ng.gain.exponentialRampToValueAtTime(.09, t + .12); ng.gain.exponentialRampToValueAtTime(.0001, t + .8);
+    n.connect(bp); bp.connect(ng); ng.connect(sfxBus); n.start(t); n.stop(t + .8);
   } else {
     const o = AC.createOscillator(), g = AC.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(48, t + .35);
@@ -201,7 +203,7 @@ function dieFx(u, o) {
    lunges once the last die has landed, and the blow lands CHARGE later. Times are ms from the start of the action. */
 const DIE_GAP = 150;
 const dieTime = () => Math.round(560 + Math.random() * 160);   // slower and more deliberate (Build 117), and never quite the same
-const MOD_PAUSE = 320, MOD_STEP = 700, VERDICT = 600, TOKEN_T = 320;
+const MOD_PAUSE = 320, MOD_STEP = 700, VERDICT = 760, TOKEN_T = 320;   // the verdict gets room for its sound before the damage die
 const modsTime = (n, verdict) => MOD_PAUSE + n * MOD_STEP + (verdict ? VERDICT : 220);
 let DICE_SHIFT = 0, SWING_CHARGE_AT = 0, SWING_IMPACT = 0;
 function diceTimeline(start, withDamage, charge, hitMods = 0, dmgMods = 0) {
