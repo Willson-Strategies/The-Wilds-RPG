@@ -9,7 +9,7 @@ Rule changes are also made in the "RPG Base line" Google Doc. The repository his
 - **No more flat weapon damage.** The Staff, Dagger, Spear, Bow and Sling roll a D2 (+1 and +0 before), the Mace a D3 (was +2), and the starting weapons roll too: the Fighter's Sword a D3, the Elf's Spear a D2. A D2 is rolled on a d4 marked 1, 2, 1, 2. The rules Doc is updated to match.
 - A hero with no weapon and no spells can no longer attack bare-handed: they can only wait or flee.
 - A monster (or hero) brought down by the second blow of a Double Strike no longer greys out while the dice are still adding up; its card and ailment icons stay until the killing blow lands.
-- New dice sounds: each modifier lands with a soft breath and hum instead of a pop; a to-hit roll that meets the AC rings out with a bright rising aura (the music dips under it, and the damage die waits for it), and one that falls short ends on a dull thud.
+- Dice sounds: each modifier lands with a soft breath and hum instead of a pop, and a to-hit roll that falls short ends on a dull thud. A hit makes no sound: every die of a hit glows gold instead (crits glow orange, as before).
 - After a win, each hero's XP bar fills gradually. On a level up the bar flashes, a chime plays, and the card glows gold until the victory screen is closed.
 
 ## Build 116 · 28 Oct 2026

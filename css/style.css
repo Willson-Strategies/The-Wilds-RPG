@@ -492,3 +492,5 @@ input[type=text]{font:inherit;background:#efe0bc;color:var(--ink);border:1px sol
 @keyframes xpflash{0%,100%{filter:none}40%{filter:brightness(2.4) saturate(1.4);box-shadow:0 0 10px #ffd77a}}
 .hero.lvlup{position:relative;box-shadow:0 0 0 2px #e0b040,0 0 18px 4px rgba(255,200,80,.75);animation:lvlaura 1.6s ease-in-out infinite}
 @keyframes lvlaura{50%{box-shadow:0 0 0 2px #ffd77a,0 0 30px 9px rgba(255,210,90,.9)}}
+.fx-die.judged:not(.missed):not(.crit){filter:drop-shadow(0 0 9px rgba(255,214,110,1)) drop-shadow(0 0 22px rgba(255,180,60,.75)) drop-shadow(0 3px 3px rgba(0,0,0,.7));transition:filter .25s}   /* every hit glows gold (Build 117) */
+.fx-die.crit.judged{filter:drop-shadow(0 0 9px #ffb347) drop-shadow(0 0 20px rgba(255,120,40,.7)) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
