@@ -1,31 +1,37 @@
 /* ---------------- prologue (Build 119) ----------------
    Every new quest opens on the night the orcs came, before the party is raised. Four of the Duke's guard (Odran,
-   Rhovik, Veyra and Borska) fight one tutorial battle at level 5 (3 Goblins and an Orc, level 4), with windows that
-   explain the battle screen, TO HIT, damage and the stats behind each bonus. Afterwards comes Raise Your Party,
-   starting from those four at level 1 (Build 119).
-   S.prologue = {stage, keep: the four at level 1, l5: the level 5 party (for a retry), tips: windows already seen}. */
+   Rhovik, Veyra and Borska) fight at the gate at level 5 (3 Goblins and an Orc, level 4). Then the player picks two of
+   them to swap for Ithrel (Elf) and Brother Hale (Cleric), who are fighting a Giant Orc in the courtyard. Tutorial
+   windows explain the screen, TO HIT, damage, the stats behind each bonus, and the Elf and Cleric. At the end the castle
+   is swallowed by the earth, and Raise Your Party starts from the final four at level 1.
+   S.prologue = {stage, fight, l1: each hero at level 1 by id, pre: the party as the current fight began (for a retry),
+   tips: windows already seen}. Stages: 0 storm, 1 Duke, 2 gate, 3 courtyard (pick two), 4 the castle sinks. */
 const PRO_PARTY = [['Fighter', 'Odran'], ['Thief', 'Rhovik'], ['Magic User', 'Veyra'], ['Dwarf', 'Borska']];
+const PRO_HELP = [['Elf', 'Ithrel'], ['Cleric', 'Brother Hale']];
 function newQuestPrologue(n) {   // a new quest: straight into the prologue, no party screen first
   QUEST = n; DRAFT_ST = {};
   const party = PRO_PARTY.map(([c, nm]) => makeHero(c, nm));
-  party.forEach((h, i) => { DRAFT_ST[i + '|' + h.cls] = h.st; });
   S = {party, gold: startGold(party), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true};
   beginPrologue(); save(); go(); window.scrollTo({top: 0});
 }
 const PRO_FOES = ['Goblin', 'Goblin', 'Goblin', 'Orc'];
-const PRO_SPELL = {'Magic User': 'Magic Missile', Elf: 'Magic Missile', Thief: 'Magic Missile', Cleric: 'Cure Light Wounds'};
-function beginPrologue() {
-  const keep = JSON.stringify(S.party);
-  S.party.forEach(h => {   // level 5 for this one fight, spellbooks filled with spells they can use against orcs
-    while (h.level < 5) levelUp(h);
-    h.xp = XP_CUM[5]; h.hp = h.max;
-    if (PRO_SPELL[h.cls]) { h.book = h.book.map(s => s && SPELLS[s].undead ? PRO_SPELL[h.cls] : s || PRO_SPELL[h.cls]); if (!h.known.includes(PRO_SPELL[h.cls])) h.known.push(PRO_SPELL[h.cls]); }
-    h.used = h.book.map(() => false);
-  });
-  S.prologue = {stage: 0, keep, l5: JSON.stringify(S.party), tips: []};
+/* Spellbooks filled for the night with spells that work against orcs (no Undead Ward). */
+const PRO_SPELL = {'Magic User': ['Magic Missile'], Thief: ['Magic Missile'], Elf: ['Magic Missile', 'Cure Light Wounds'], Cleric: ['Cure Light Wounds', 'Cure Light Wounds', 'Protection against Evil', 'Cure Light Wounds', 'Cure Light Wounds']};
+function veteran(h) {   // level 5 for the prologue
+  while (h.level < 5) levelUp(h);
+  h.xp = XP_CUM[5]; h.hp = h.max;
+  const sp = PRO_SPELL[h.cls];
+  if (sp) { h.book = h.book.map((_, j) => sp[j % sp.length]); sp.forEach(x => { if (!h.known.includes(x)) h.known.push(x); }); }
+  h.used = h.book.map(() => false);
 }
-function endPrologue() {   // on to Raise Your Party, starting from the prologue's four at level 1
-  S.party = JSON.parse(S.prologue.keep); S.prologue = null; S.battle = null; S.raising = true; S.lastResult = ''; save(); go();
+function beginPrologue() {
+  const help = PRO_HELP.map(([c, nm]) => makeHero(c, nm)), l1 = {};
+  [...S.party, ...help].forEach(h => { l1[h.id] = JSON.stringify(h); veteran(h); });
+  S.prologue = {stage: 0, fight: 1, l1, help: JSON.stringify(help), tips: []};
+}
+function endPrologue() {   // on to Raise Your Party, starting from the heroes who finished the prologue, at level 1
+  const P = S.prologue;
+  S.party = S.party.map(h => JSON.parse(P.l1[h.id])); S.prologue = null; S.battle = null; S.raising = true; S.lastResult = ''; save(); go();
 }
 /* ---- the scenes ---- */
 const PRO_SCENES = [
@@ -37,36 +43,67 @@ const PRO_SCENES = [
   {title: 'The Main Gate', art: 'gate', text: `<p class="lead">You run for the main gate, boots sliding on the wet stones, and find you are already too late. Ladders and ropes hang from the walls, and orcs and goblins are swarming up them.</p>
     <p>Some lose their grip and fall screaming to their deaths. But three goblins drop from the wall and rush towards you, and behind them comes a hulking orc.</p>
     <p>You raise your weapons.</p>`, btn: 'Raise your weapons'},
-  {title: 'Dawn', art: 'dawn', text: `<p class="lead">The last of them falls, and the gate holds. By dawn the storm has blown itself out, and the bodies of orcs and goblins lie in heaps beneath the walls.</p>
-    <p>The Duke finds you among them, his cloak torn and his sword notched. "The castle stands," he says, "but it will not stand alone a second time. Somewhere out in the wilds there must be allies. Find them."</p>
+  {title: 'The Courtyard', art: 'yard', text: `<p class="lead">The gate holds, but behind you the courtyard has become a battlefield. Through the rain you see Ithrel, an elf of the Duke's guard, and Brother Hale, a cleric of the castle chapel, fighting back to back against a giant orc.</p>
+    <p>It stands half again the height of any man and swings a club made from a whole tree. They cannot hold it alone.</p>
+    <p>Choose two of your party to stay and hold the gate. Ithrel and Brother Hale will take their places.</p>`, btn: 'Charge the giant orc'},
+  {title: 'The Earth Opens', art: 'sink', text: `<p class="lead">The giant orc crashes down, and for a moment the courtyard is silent but for the rain.</p>
+    <p>Then the ground begins to shake. The cobbles split beneath your feet, and a roar rises from somewhere deep below the castle. The great keep lurches like a ship in a storm.</p>
+    <p>You run for the broken gate as the walls, the towers and the keep sink into the earth, swallowed whole. The ground closes over the last of the battlements with a long, grinding sigh.</p>
+    <p>When the dust settles, the castle is gone.</p>
     <p class="note">The prologue is over. Now raise the party who will set out on the quest. Every hero begins at level 1.</p>`, btn: 'Raise your party'},
 ];
+let PRO_PICK = [];
 function screenPrologue() {
-  const P = S.prologue, sc = PRO_SCENES[P.stage];
-  $('#app').innerHTML = `<header class="bar"><h1>Base Line</h1><div class="meta"><span>Prologue</span><span>${P.stage === 3 ? 'Dawn' : 'Night'}</span></div><button class="btn small" id="musicbtn" style="margin-left:auto" aria-pressed="${musicOn}">♪ Sound ${musicOn ? 'on' : 'off'}</button><button class="btn small" id="questsbtn">Quests</button></header>
+  const P = S.prologue, sc = PRO_SCENES[P.stage], yard = P.stage === 3;
+  const picks = yard ? `<div class="pro-picks">${S.party.map((h, i) => `<button class="pro-pick${PRO_PICK.includes(i) ? ' on' : ''}" data-pick="${i}"><img src="${HEADS[h.cls]}" alt=""><span><b>${esc(h.name)}</b><i>${h.cls} · HP ${h.dead ? 0 : h.hp} / ${h.max}${h.dead ? ' · fallen' : ''}</i></span><em>Stays at the gate</em></button>`).join('')}</div>
+    <p class="note pro-picknote">Choose two to stay behind. Their HP carries over from the gate, so the wounded may be best left behind.</p>` : '';
+  $('#app').innerHTML = `<header class="bar"><h1>Base Line</h1><div class="meta"><span>Prologue</span><span>Night</span></div><button class="btn small" id="musicbtn" style="margin-left:auto" aria-pressed="${musicOn}">♪ Sound ${musicOn ? 'on' : 'off'}</button><button class="btn small" id="questsbtn">Quests</button></header>
   <div class="pro parch panel"><div class="pro-stage pro-${sc.art}">${proArt(sc.art)}<canvas class="pro-rain"></canvas><div class="pro-flash"></div></div>
     <div class="scroll" id="evScroll"><h2>${sc.title}</h2><div class="type">${sc.text}</div><button class="ev-skip" id="evSkip">Skip</button></div>
-    <div class="row ev-acts" style="gap:10px;margin-top:14px"><button class="btn red" id="proNext">${sc.btn}</button>${P.stage < 3 ? '<button class="btn" id="proSkip">Skip the prologue</button>' : ''}</div></div>`;
+    <div class="ev-acts" style="margin-top:14px">${picks}<div class="row" style="gap:10px"><button class="btn red" id="proNext" ${yard && PRO_PICK.length !== 2 ? 'disabled' : ''}>${sc.btn}</button>${P.stage < 4 ? '<button class="btn" id="proSkip">Skip the prologue</button>' : ''}</div></div></div>`;
   proSky(P.stage);
   startScroll();
+  if (P.stage === 4) proQuake();
+  document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.pick; PRO_PICK = PRO_PICK.includes(i) ? PRO_PICK.filter(x => x !== i) : [...PRO_PICK.slice(-1), i];
+    document.querySelectorAll('[data-pick]').forEach(x => x.classList.toggle('on', PRO_PICK.includes(+x.dataset.pick)));
+    $('#proNext').disabled = PRO_PICK.length !== 2;
+  });
   if ($('#proSkip')) $('#proSkip').onclick = () => {
     const b = $('#proSkip'); if (!b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Sure? Skip to the party'; return; }
     endPrologue();
   };
   $('#proNext').onclick = () => {
-    if (P.stage === 3) return endPrologue();
-    if (P.stage === 2) { const st = $('.pro-stage'); st.classList.add('pro-go'); proThunder(.9, 0); setTimeout(proBattle, 900); return; }
+    if (P.stage === 4) return endPrologue();
+    if (P.stage === 2 || P.stage === 3) {
+      if (yard) {   // the two picked stay at the gate; Ithrel and Brother Hale take their places in the marching order
+        const help = JSON.parse(P.help); PRO_PICK.sort((a, b) => a - b).forEach((i, k) => { S.party[i] = help[k]; });
+        S.party.forEach(h => { if (h.dead) { h.dead = false; h.hp = Math.max(1, Math.round(h.max / 4)); } h.status = {}; });
+        PRO_PICK = []; P.fight = 2;
+      }
+      const st = $('.pro-stage'); st.classList.add('pro-go'); proThunder(.9, 0); setTimeout(proBattle, 900); return;
+    }
     P.stage++; save(); screenPrologue(); window.scrollTo({top: 0});
   };
 }
-function proBattle() { startBattle(false, {foes: PRO_FOES, noFlee: true, direct: true, boss: 'prologue'}); }
+const PRO_FIGHTS = {1: {foes: PRO_FOES, where: 'The Castle Gate', intro: ['Three goblins and a hulking orc!', 'They drop from the wall and rush straight at you through the rain.']},
+  2: {foes: ['Giant Orc'], where: 'The Courtyard', intro: ['A giant orc!', 'It turns from the elf and the cleric, lifts its club of a whole tree, and roars.']}};
+/* Each fight opens on the usual "Monsters approach" panel: the party leader, then the red slash when Fight is pressed. */
+function proBattle() {
+  const F = PRO_FIGHTS[S.prologue.fight]; S.prologue.pre = JSON.stringify(S.party);
+  startBattle(false, {foes: F.foes, noFlee: true, boss: 'prologue', intro: F.intro});
+}
 function prologueWon() {
-  tutClear(); S.battle = null; S.prologue.stage = 3; save();
+  tutClear(); S.battle = null;
+  if (S.prologue.fight === 2) { S.prologue.stage = 4; save(); return go(); }
+  S.prologue.stage = 3; save();
   modal(`<h2>The Gate Holds</h2><p>The orc crashes to the cobbles and does not rise. Along the walls, the rest of the war band breaks and flees into the storm.</p><div class="row"><button class="btn red" data-close>Onward</button></div>`, () => go());
 }
 function prologueLost() {
-  tutClear(); S.battle = null; S.party = JSON.parse(S.prologue.l5); save();
-  modal(`<h2>Not Yet</h2><p>You go down beneath the goblins' blades, but the Duke's guard drag you back behind their shields and pour wine down your throats. The gate still stands, just. The orc is coming again.</p><div class="row"><button class="btn red" data-close>Raise your weapons</button></div>`, () => proBattle());
+  tutClear(); S.battle = null; S.party = JSON.parse(S.prologue.pre); S.party.forEach(h => { h.dead = false; h.hp = h.max; h.status = {}; h.used = h.book.map(() => false); }); save();
+  const yard = S.prologue.fight === 2;
+  modal(yard ? `<h2>Not Yet</h2><p>The giant orc's club sends you sprawling across the cobbles. Brother Hale drags you into the chapel doorway and prays over you until your eyes open. The orc is still in the courtyard.</p><div class="row"><button class="btn red" data-close>Back into the fight</button></div>`
+    : `<h2>Not Yet</h2><p>You go down beneath the goblins' blades, but the Duke's guard drag you back behind their shields and pour wine down your throats. The gate still stands, just. The orc is coming again.</p><div class="row"><button class="btn red" data-close>Raise your weapons</button></div>`, () => proBattle());
 }
 /* The battle and its result screens go to the prologue's own endings while it lasts. */
 const _victory = victory, _defeat = defeat;
@@ -84,6 +121,15 @@ const proFig = {   // each drawn standing on (0,0), about 100 units tall, facing
     <path d="M16-2v-104" stroke-width="3"/><path d="M13-106l3-10 3 10z"/><ellipse cx="-12" cy="-50" rx="10" ry="16"/></g>`,
   duke: (c = PK) => `<g fill="${c}" stroke="${c}" stroke-linecap="round"><path class="pro-cloak" d="M-10-78C-30-60-44-30-58 2l40-4 4-60z"/><path d="M-7 0l2-34M7 0l-1-34" stroke-width="8"/><path d="M-15-34h30l-4-44h-22z"/>
     <circle cx="0" cy="-86" r="9"/><path d="M-8-92l3-8 3 5 2-6 2 6 3-5 3 8z"/><path d="M12-74l18-24" stroke-width="7"/><path d="M28-96l16-46" stroke-width="3.5"/><path d="M24-98h12" stroke-width="3"/></g>`,
+  elf: (c = PK) => `<g fill="${c}" stroke="${c}" stroke-linecap="round"><path d="M-6 0l4-34M8 0l-2-34" stroke-width="6"/><path d="M-11-34h22l-4-36h-14z"/><circle cx="0" cy="-80" r="8"/>
+    <path d="M-7-82l-12-8 7 10zM7-82l12-8-7 10z"/><path d="M-8-84c-4 10-2 22-6 30M8-84c2 10 0 20 4 28" stroke-width="3" fill="none"/>
+    <g class="pro-thrust"><path d="M10-62l20-6" stroke-width="5"/><path d="M-10-66L66-82" stroke-width="3"/><path d="M64-86l12 3-10 6z"/></g></g>`,
+  cleric: (c = PK) => `<g fill="${c}" stroke="${c}" stroke-linecap="round"><circle class="pro-holy" cx="22" cy="-104" r="16" fill="#ffe08a" stroke="none" opacity=".75"/><path d="M-16 0l6-70h20l6 70z"/>
+    <path d="M-10-72q10-24 20 0z"/><circle cx="0" cy="-74" r="9"/><path d="M-11-70q11-22 22 0" stroke-width="4" fill="none"/>
+    <path d="M8-60l14-38" stroke-width="5"/><circle cx="22" cy="-104" r="7"/><path d="M-8-58l-14 22" stroke-width="5"/></g>`,
+  giantorc: (c = PK) => `<g fill="${c}" stroke="${c}" stroke-linecap="round"><path d="M-16 0l5-36M16 0l-5-36" stroke-width="15"/><path d="M-26-40h52l-5 12h-42z"/><ellipse cx="0" cy="-66" rx="34" ry="30"/>
+    <circle cx="0" cy="-100" r="13"/><path d="M-6-97l-3 6M6-97l3 6" stroke="#e2d6b6" stroke-width="2.5"/><g fill="#d8401e" stroke="none"><circle cx="-5" cy="-103" r="2"/><circle cx="5" cy="-103" r="2"/></g>
+    <path d="M-32-80l-14 36" stroke-width="13"/><g class="pro-club"><path d="M32-82l16-26" stroke-width="13"/><path d="M44-104L66-170" stroke-width="15"/><circle cx="68" cy="-176" r="13"/><path d="M58-150l-8-4M66-136l8-2" stroke-width="4"/></g></g>`,
   horse: (c = PK) => `<path fill="${c}" d="M-26 0L-18 0L-14-30L-6-48L2-30L4 0L12 0L10-34L14-56L34-84L52-88L64-76L60-70L50-78L42-76L46-96L60-104L70-94L66-90L58-96L48-98L46-110L66-118L80-120L86-126L80-136L62-148L54-160L50-154L46-162L40-152L36-150L32-142L26-138L22-128L14-122L8-112L-4-98L-24-80L-34-66Q-52-58-62-20L-54-28L-50-18L-44-40L-38-48L-36-36L-26-20Z"/>`,
   horsehead: (c = PK) => `<path fill="${c}" d="M-30 0L-26-40Q-20-70 0-86L4-100L9-89L15-98L17-84L40-62L56-44L54-35L40-36L22-48L12-44L8-20L10 0Z M-22-46L-30-56L-24-60L-16-70L-20-74L-8-80Z"/>`,
 };
@@ -99,11 +145,11 @@ function proCastle(x, y, s, lit) {
     ${win(-176, -140)}${win(162, -126)}${win(-20, -176)}${win(14, -176)}${win(-90, -70)}${win(80, -64)}${win(-2, -240)}</g>`;
 }
 function proArt(k) {
-  const sky = k === 'dawn' ? ['#4b4a4c', '#8a7c68', '#b49c72'] : ['#020306', '#0b0f17', '#19202b'];
+  const sky = ['#020306', '#0b0f17', '#19202b'];
   const defs = `<defs><linearGradient id="pSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset=".6" stop-color="${sky[1]}"/><stop offset="1" stop-color="${sky[2]}"/></linearGradient>
     <pattern id="pStone" width="48" height="24" patternUnits="userSpaceOnUse"><rect width="48" height="24" fill="#191d26"/><path d="M0 .5h48M0 12.5h48M.5 0v12M24.5 12v12" stroke="#0e1117" stroke-width="1.5"/></pattern>
     <radialGradient id="pLamp"><stop offset="0" stop-color="#7a4a1c"/><stop offset=".7" stop-color="#2a170a"/><stop offset="1" stop-color="#0a0605"/></radialGradient><filter id="pBlur"><feGaussianBlur stdDeviation="10"/></filter><radialGradient id="pTorch"><stop offset="0" stop-color="#ffcf6a" stop-opacity=".9"/><stop offset="1" stop-color="#ff7a20" stop-opacity="0"/></radialGradient></defs>`;
-  const clouds = k === 'dawn' ? `<g filter="url(#pBlur)" opacity=".55" fill="#6d665e"><ellipse cx="160" cy="70" rx="240" ry="40"/><ellipse cx="760" cy="110" rx="300" ry="34"/></g>`
+  const clouds = k === 'sink' ? `<g filter="url(#pBlur)" fill="#1d2431" opacity=".85"><ellipse cx="200" cy="40" rx="300" ry="60"/><ellipse cx="760" cy="30" rx="300" ry="60"/></g>`
     : `<g class="pro-clouds" filter="url(#pBlur)" fill="#1d2431" opacity=".85"><ellipse cx="120" cy="30" rx="260" ry="60"/><ellipse cx="520" cy="10" rx="320" ry="70"/><ellipse cx="880" cy="40" rx="260" ry="60"/><ellipse cx="300" cy="90" rx="180" ry="26" fill="#283041"/><ellipse cx="760" cy="80" rx="160" ry="22" fill="#283041"/></g>`;
   let body = '';
   if (k === 'storm') body = `<path d="M0 410Q260 330 560 330T960 370V540H0z" fill="#0b0e14"/>${proCastle(600, 352, .95, '#d9953a')}
@@ -126,9 +172,20 @@ function proArt(k) {
     ${proAt(180, 160, .55, proFig.goblin(), 'pro-fall')}${proAt(800, 160, .6, proFig.orc(), 'pro-fall pro-fall2')}${proAt(650, 160, .5, proFig.goblin(), 'pro-fall pro-fall3')}
     <path d="M0 540h960v-40c-300 20-660 20-960 0z" fill="#161a22"/><ellipse cx="250" cy="528" rx="120" ry="5" fill="#9fb4d0" opacity=".14"/><ellipse cx="760" cy="522" rx="90" ry="4" fill="#9fb4d0" opacity=".14"/>
     <g class="pro-charge">${proAt(300, 520, 1.25, proFig.goblin())}${proAt(670, 524, 1.3, proFig.goblin())}${proAt(190, 548, 1.45, proFig.goblin())}${proAt(490, 556, 1.75, proFig.orc())}</g>`;
-  if (k === 'dawn') body = `<path d="M0 400Q300 330 600 360T960 350V540H0z" fill="#2c2a2a"/>${proCastle(480, 392, 1.05, '#c08a3c')}
-    ${[300, 560, 700].map((x, i) => `<path class="pro-smoke" style="animation-delay:${i * 1.3}s" d="M${x} 330q-30-50 0-110t-40-150" stroke="#4a4642" stroke-width="9" fill="none" opacity=".22" filter="url(#pBlur)"/>`).join('')}
-    <path d="M0 540h960v-60c-260 26-640 20-960 4z" fill="#1d1b1b"/>${[90, 160, 790, 860, 230].map((x, i) => `<ellipse cx="${x}" cy="${508 + i % 2 * 10}" rx="26" ry="7" fill="#121010"/>`).join('')}`;
+  if (k === 'yard') body = `<rect x="0" y="150" width="960" height="390" fill="url(#pStone)"/><rect x="0" y="150" width="960" height="390" fill="#05070b" opacity=".35"/><g fill="#191d26">${crenel(0, 960, 150, 26, 18)}</g>
+    <g fill="#0e1117"><rect x="380" y="40" width="200" height="140"/>${crenel(380, 580, 40, 16, 10)}</g><rect class="pro-win" x="440" y="80" width="6" height="12" fill="#d9953a"/><rect class="pro-win" x="510" y="80" width="6" height="12" fill="#d9953a"/>
+    ${[90, 870].map(x => `<rect x="${x - 4}" y="230" width="8" height="70" fill="${PK}"/><circle class="pro-torch" cx="${x}" cy="222" r="46" fill="url(#pTorch)"/><path class="pro-fire" d="M${x - 7} 232q7-26 7-26q7 26 7 26z" fill="#ffb347"/>`).join('')}
+    <path d="M0 540h960v-70c-300 16-660 14-960 4z" fill="#161a22"/><ellipse cx="480" cy="520" rx="200" ry="8" fill="#9fb4d0" opacity=".13"/>
+    <ellipse cx="200" cy="420" rx="70" ry="70" fill="#ffe08a" opacity=".1" filter="url(#pBlur)" class="pro-holy"/>
+    ${proAt(200, 528, 1.45, proFig.cleric())}${proAt(330, 520, 1.45, proFig.elf())}${proAt(640, 530, 2.35, proFig.giantorc())}`;
+  if (k === 'sink') body = `<clipPath id="pClip"><path d="M0 0H960V372Q700 352 480 372T0 384z"/></clipPath>
+    <ellipse cx="480" cy="250" rx="340" ry="170" fill="#33405a" opacity=".55" filter="url(#pBlur)"/>
+    <g clip-path="url(#pClip)"><g class="pro-sinking">${proCastle(480, 380, 1.05, '#d9953a')}</g></g>
+    <g class="pro-dust" filter="url(#pBlur)" fill="#3c3a38">${[220, 360, 480, 600, 740].map((x, i) => `<ellipse style="animation-delay:${1.6 + i * .5}s" cx="${x}" cy="372" rx="110" ry="46"/>`).join('')}</g>
+    <path d="M0 384Q260 370 480 372T960 372V540H0z" fill="#0b0e14"/>
+    <g class="pro-cracks" fill="none" stroke="#ff8a30" stroke-width="2" stroke-linecap="round" opacity=".85">${['M480 376l-30 40-10 50 -40 74', 'M480 376l40 34 -6 60 30 70', 'M300 382l-20 46 -50 30 -40 82', 'M660 378l26 40 60 26 30 96', 'M120 386l20 50 -30 104', 'M850 380l-24 60 20 100'].map((d, i) => `<path style="animation-delay:${1 + i * .6}s" d="${d}"/>`).join('')}</g>
+    ${[160, 300, 420, 560, 700, 820].map((x, i) => `<rect class="pro-rubble" style="animation-delay:${2 + i * .9}s" x="${x}" y="300" width="${6 + i % 3 * 3}" height="${5 + i % 2 * 4}" fill="#14171e"/>`).join('')}
+    ${proAt(430, 540, 1.2, proFig.guard())}${proAt(540, 548, 1.25, proFig.elf())}`;
   return `<svg class="pro-svg" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${defs}<rect width="960" height="540" fill="url(#pSky)"/>${clouds}${body}</svg>`;
 }
 /* Rain on a canvas over the scene, and lightning: a jagged bolt, a white flash, the scene lit up, thunder after. */
@@ -163,8 +220,8 @@ let PRO_T = null;
 function proSky(stage) {
   clearTimeout(PRO_T);
   const cv = $('.pro-rain'), st = $('.pro-stage'); if (!cv) return;
-  if (stage === 3) return;   // dawn: the storm is over
-  proRain(cv, {n: 300});
+  proRain(cv, {n: stage === 4 ? 140 : 300});
+  if (stage === 4) return;   // the castle sinks: no lightning, only the rumble
   const loop = first => { PRO_T = setTimeout(() => { if (!cv.isConnected) return; proStrike(cv, $('.pro-flash'), st, first); if (stage === 0 && Math.random() < .55) setTimeout(proNeigh, 900 + Math.random() * 1500); loop(); }, first ? 700 : 3500 + Math.random() * 5500); };
   loop(true);
   if (stage === 0) setTimeout(proNeigh, 2600);
@@ -196,6 +253,16 @@ function proThunder(power, delay) {
   g.gain.exponentialRampToValueAtTime(.35 * power, t + .9); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
   src.connect(lp); lp.connect(g); g.connect(sfxBus); src.start(t); src.stop(t + dur);
 }
+function proQuake() {
+  if (!AC || AC.state !== 'running') return;
+  const t = AC.currentTime + .05, dur = 11, b = AC.createBuffer(1, AC.sampleRate * dur, AC.sampleRate), d = b.getChannelData(0); let br = 0;
+  for (let i = 0; i < d.length; i++) { br = (br + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = br * 9; }
+  const src = AC.createBufferSource(); src.buffer = b;
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 140;
+  const g = AC.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(1.1, t + 2.5); g.gain.setValueAtTime(1.1, t + 8); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  src.connect(lp); lp.connect(g); g.connect(sfxBus); src.start(t); src.stop(t + dur);
+  [1500, 3200, 4600, 6200, 8000].forEach((ms, i) => proThunder(.55 + (i % 2) * .3, ms));   // stone breaking and falling
+}
 function proNeigh() {   // a frightened whinny: a voice that leaps up and shudders down, through a horse-like throat
   if (!AC || AC.state !== 'running' || !S || !S.prologue || S.prologue.stage > 0) return;
   const t = AC.currentTime + .02, dur = 1.3 + Math.random() * .4, f0 = 380 + Math.random() * 120;
@@ -213,7 +280,7 @@ function proNeigh() {   // a frightened whinny: a voice that leaps up and shudde
 setInterval(() => {
   const pro = S && S.prologue, inBattle = pro && S.battle && S.battle.boss === 'prologue';
   const rolling = !!document.querySelector('.fx-die');
-  if (pro && S.prologue.stage < 3) stormOn(inBattle ? (rolling ? .02 : .06) : .3); else stormOff();   // the rain drops away under the dice
+  if (pro && S.prologue.stage < 4) stormOn(inBattle ? (rolling ? .02 : .06) : .3); else stormOff();   // the rain drops away under the dice
   let ov = document.getElementById('proRainOver');
   if (inBattle && !ov) { ov = document.createElement('canvas'); ov.id = 'proRainOver'; document.body.appendChild(ov); proRain(ov, {n: 160, col: 'rgba(150,170,200,.28)'}); }
   else if (!inBattle && ov) ov.remove();
@@ -274,6 +341,16 @@ function tutNext() {   // the window that should show now, if any
       <li><span class="tut-ico">${modIco.item(c.sp)}</span> The spell's own bonus.</li></ul>
       ${c.face ? `<p class="tut-eg">${esc(c.h)}'s ${esc(c.sp)} (${c.expr}) rolled ${tutSum(c.face, c.mods)} damage.</p>` : ''}
       <p>Each spell in a spellbook can be cast once, then it is spent until the party rests.</p>`]); }
+  if (h && !B.mode && S.prologue.fight === 2) {   // the courtyard: the giant orc, then the Elf and the Cleric on their first turns
+    if (!tutSeen('giant')) T.push(['giant', '.foes', 'The Giant Orc', `<p>One huge foe with a lot of HP. Its club sweeps through two heroes at once: the one it aims at and the hero standing beside them in the marching order.</p><p>Keep your heroes' HP up, and wear it down together.</p>`]);
+    else if (h.cls === 'Elf' && !tutSeen('elf')) T.push(['elf', '.actions', `${esc(h.name)}, the Elf`, `<p>Elves are blade and spell in one. An Elf fights well with weapons up to Standard, such as swords, axes and bows, and can wear chain mail and carry a shield.</p>
+      <p>An Elf also casts from both spellbooks: Magic User spells like Magic Missile, and Cleric spells like Cure Light Wounds. But an Elf never masters magic as a true Magic User or Cleric does:</p>
+      <ul class="tut-list"><li>${tutIco('INT')} Only half the INT bonus is added to an Elf's spell damage.</li><li>${tutIco('WIS')} Only half the WIS bonus is added to an Elf's healing.</li></ul>
+      <p>An Elf also has fewer spellbook slots, so fewer spells between rests.</p>`]);
+    else if (h.cls === 'Cleric' && !tutSeen('cleric')) T.push(['cleric', '.actions', `${esc(h.name)}, the Cleric`, `<p>Clerics are the party's healers. <b>Cure Light Wounds</b> restores D6 HP to one ally, plus the Cleric's full WIS bonus:</p>
+      <ul class="tut-list"><li>${tutIco('WIS')} <b>This icon shows the WIS bonus</b>, from the Cleric's Wisdom. The higher you raise a Cleric's WIS, the more every healing spell restores.</li></ul>
+      <p><b>Protection against Evil</b> halves the damage one ally takes for 2 turns, and Undead Ward spells burn the undead. Clerics fight with Basic and Light weapons and wear up to chain mail, but no shield. Out of battle, a Cleric's care heals the party faster while they rest.</p>`]);
+  }
   if (h && !B.mode) {
     if (!tutSeen('foes')) T.push(['foes', '.foes', 'Your enemies', `<p>Three goblins and an orc. Each card shows the enemy's level, its HP, and its AC: the number on the shield.</p><p>AC is armour class. The higher it is, the harder that enemy is to hit.</p>`]);
     else if (!tutSeen('party')) T.push(['party', '.roster', 'Your party', `<p>Your heroes, a group of veterans of the Duke's guard. The glowing card is the hero whose turn it is.</p><p>Each card shows HP, AC, and the <b>To hit</b> and <b>Damage</b> of their weapons. Monsters typically target the front two party members more often when attacking.</p>`]);
@@ -287,8 +364,9 @@ function tutNext() {   // the window that should show now, if any
 function tutClear() { if (TUT_EL) TUT_EL.remove(); TUT_EL = null; TUT_ATK = null; TUT_CAST = null; TUT_HURT = null; }
 function tutCheck() {
   if (TUT_EL && (!tutOn() || S.battle.over)) tutClear();
-  if (!tutOn() || TUT_EL || Date.now() < INPUT_LOCK || !$('.foes') || document.querySelector('.fx-die')) return;   // the dice finish their whole show first
+  if (!tutOn() || TUT_EL || Date.now() < INPUT_LOCK || !$('.foes')) return;
   const t = tutNext(); if (!t) return;
+  if (['tohit', 'damage', 'hurt', 'magic'].includes(t[0]) && document.querySelector('.fx-die')) return;   // a card about a roll waits for the dice to finish their whole show
   const [id, sel, title, html] = t, target = document.querySelector(sel);
   const el = document.createElement('div'); el.className = 'pro-tut'; TUT_EL = el;
   el.innerHTML = `<div class="tut-block"></div><div class="tut-ring"></div><div class="tut-card parch panel"><h3>${title}</h3>${html}<div class="row"><button class="btn red" id="tutOk">Got it</button><button class="btn small" id="tutOff">Skip the tutorial</button></div></div>`;

@@ -77,4 +77,4 @@ const REGIONS = [
 ];
 const BOSSES = ['Orc War Chief', 'Lich', 'Beastman Warlord'];
 // Monsters met only in the prologue's battle: never in wild encounters.
-const SCRIPTED = ['Goblin', 'Orc'];
+const SCRIPTED = ['Goblin', 'Orc', 'Giant Orc'];

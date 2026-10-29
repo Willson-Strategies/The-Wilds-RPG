@@ -841,6 +841,20 @@ const DATA = {
    "attacks": 1,
    "special": "Prologue only: the hulking orc at the castle gate in the opening battle.",
    "boss": false
+  },
+  {
+   "lvl": 5,
+   "name": "Giant Orc",
+   "type": "Giant",
+   "hp": 65,
+   "ac": 12,
+   "hit": 5,
+   "hitMissing": false,
+   "dmg": "2D6+4",
+   "dmgAvg": 11.0,
+   "attacks": 1,
+   "special": "Sweep: its attack hits two adjacent characters. Prologue only: the courtyard battle.",
+   "boss": false
   }
  ],
  "drops": {

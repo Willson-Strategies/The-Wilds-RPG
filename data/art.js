@@ -238,6 +238,7 @@ const MONS = {
  "Young Beastman": "art/monsters/young-beastman.png",
  "Goblin": "art/monsters/goblin.png",
  "Orc": "art/monsters/orc.png",
+ "Giant Orc": "art/monsters/giant-orc.png",
  "Beastman": "art/monsters/beastman.png",
  "Giant Boar": "art/monsters/giant-boar.png",
  "Bandit": "art/monsters/bandit.png",
