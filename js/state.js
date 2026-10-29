@@ -13,7 +13,7 @@ const UNIQUES = {
 Object.entries(UNIQUES).forEach(([n, u]) => { WPN[n] = Object.assign({}, WPN[u.base], u, {name: n, tier: 'Unique', price: 1500, sell: 500}); ICON[n] = ICON[u.base]; });
 const UNIQUE_RE = new RegExp(Object.keys(UNIQUES).map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
 /* Starting weapons: a weaker, named copy of a shop weapon ("Aldric's Sword"). */
-const STARTER = {Sword: {hit: 1, dmg: '+2'}, Axe: {hit: 0, dmg: '+D2'}, Spear: {hit: 1, dmg: '+D2'}};
+const STARTER = {Sword: {hit: 1, dmg: '+D3'}, Axe: {hit: 0, dmg: '+D2'}, Spear: {hit: 1, dmg: '+D2'}};
 const starterName = (hero, type) => `${hero}'s ${type}`;
 function regStarter(it) {
   if (!it || !it.starter) return;

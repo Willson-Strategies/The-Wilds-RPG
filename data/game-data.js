@@ -184,7 +184,7 @@ const DATA = {
    "name": "Sling",
    "tier": "Basic",
    "hit": 0,
-   "dmg": "+0",
+   "dmg": "+D2",
    "price": 3,
    "note": "Range 5"
   },
@@ -200,7 +200,7 @@ const DATA = {
    "name": "Mace",
    "tier": "Light",
    "hit": 1,
-   "dmg": "+2",
+   "dmg": "+D3",
    "price": 10,
    "note": "+50% damage to undead"
   },

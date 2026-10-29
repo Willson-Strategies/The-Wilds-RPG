@@ -62,6 +62,7 @@ function render() {
       ${h.equip.ranged ? `<button class="btn ${B.mode === 'ranged' ? 'red' : ''}" id="aRanged">${tipImg(h.equip.ranged, h.equip.ranged.shown || 0)} Shoot</button>` : ''}
       ${h.book.some(x => x) ? `<button class="btn ${B.mode === 'cast' || B.mode === 'spell' ? 'red' : ''}" id="aCast">Cast</button>` : ''}
       <button class="btn" id="aWait">Wait</button>
+      ${!h.equip.melee && !h.equip.ranged && !h.book.some(x => x) ? '<span class="note">No weapon or spells: wait or flee.</span>' : ''}
       ${B.noFlee ? '' : '<button class="btn" id="aFlee">Flee</button>'}
       ${B.mode === 'cast' ? `<div class="spellpick" style="flex-basis:100%">${spells}</div>` : ''}
       ${B.mode && B.mode !== 'cast' ? `<span class="note" style="color:var(--ink-soft);flex-basis:100%">${targetAlly ? 'Choose an ally from the party list.' : 'Choose a target.'}</span>` : ''}
@@ -93,8 +94,8 @@ function render() {
   const preview = f => {
     if (B.mode === 'melee' || B.mode === 'ranged') return attackPreview(h, f, B.mode === 'ranged');
     if (B.mode === 'spell') return spellPreview(h, h.book[B.spell], f);
-    const opts = [h.equip.melee || !h.equip.ranged ? attackPreview(h, f, false) : '', h.equip.ranged ? attackPreview(h, f, true) : ''].filter(Boolean);
-    return opts.join('<hr>');
+    const opts = [h.equip.melee ? attackPreview(h, f, false) : '', h.equip.ranged ? attackPreview(h, f, true) : ''].filter(Boolean);
+    return opts.join('<hr>') || '<div class="note">No weapon: this hero cannot attack.</div>';
   };
   document.querySelectorAll('[data-foe]').forEach(b => {
     const f = B.foes[+b.dataset.foe]; if (f.dead) return;

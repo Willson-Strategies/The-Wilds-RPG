@@ -492,4 +492,3 @@ input[type=text]{font:inherit;background:#efe0bc;color:var(--ink);border:1px sol
 @keyframes xpflash{0%,100%{filter:none}40%{filter:brightness(2.4) saturate(1.4);box-shadow:0 0 10px #ffd77a}}
 .hero.lvlup{position:relative;box-shadow:0 0 0 2px #e0b040,0 0 18px 4px rgba(255,200,80,.75);animation:lvlaura 1.6s ease-in-out infinite}
 @keyframes lvlaura{50%{box-shadow:0 0 0 2px #ffd77a,0 0 30px 9px rgba(255,210,90,.9)}}
-.fx-die.d2 .do,.pvdie.d2 .do{stroke-dasharray:4 2.4;stroke-width:6}.fx-die.d2 .dl{stroke-width:3.5;opacity:1}   /* a D2 coin: milled edge, raised rim */

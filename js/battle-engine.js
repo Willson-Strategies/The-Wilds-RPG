@@ -154,6 +154,7 @@ function applyAil(u, kind, chance, extra = {}) {
 /* party actions */
 function heroAttack(h, f, ranged) {
   const it = ranged ? h.equip.ranged : h.equip.melee;
+  if (!it) return;   // a hero with no weapon cannot attack: they can only wait or flee (Build 117)
   const w = it ? WPN[it.name] : {hit: 0, dmg: '1', note: ''};
   if (ranged) h.status.RANGE = {turns: 1};   // keeping their distance: +2 AC until their next turn
   // The dice roll first (to hit, then damage on a hit); the hero lunges once they have landed.

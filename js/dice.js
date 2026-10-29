@@ -7,7 +7,6 @@ const DIE_SHAPE = {
   8: ['M50 3 95 50 50 97 5 50Z', 'M5 50h90M50 3 30 50 50 97 70 50Z'],
   10: ['M50 3 93 40 50 97 7 40Z', 'M50 3 32 52 50 64 68 52ZM7 40l25 12M93 40 68 52M50 64v33'],
   12: ['M50 3 95 36 78 93H22L5 36Z', 'M50 20 72 38 64 66H36L28 38ZM50 3v17M95 36 72 38M78 93 64 66M22 93l14-27M5 36l23 2'],
-  2: ['M50 5a45 45 0 1 0 .1 0Z', 'M50 15a35 35 0 1 0 .1 0ZM50 22a28 28 0 1 0 .1 0Z'],   // a D2 is a coin with a milled rim (Build 117)
   tok: ['M50 6a44 44 0 1 0 .1 0Z', 'M50 20a30 30 0 1 0 .1 0Z'],   // a round damage token for weapons with no damage dice (Build 117)
   20: ['M50 3 92 27v46L50 97 8 73V27Z', 'M50 20 76 64H24ZM50 3v17M92 27 76 64M92 73 76 64M50 97 76 64M50 97 24 64M8 73l16-9M8 27l16 37M92 27 50 20 8 27'],
 };
@@ -33,7 +32,8 @@ function diePal(u) {
 const dieVars = (pal, dmg) => { const p = (DIE_PAL[pal] || DIE_PAL.monster)[dmg ? 'dmg' : 'hit']; return `--df:${p.f};--dh:${p.h};--dd:${p.d};--dl:${p.l};--dn:${p.n};--de:${p.e}`; };
 let DIE_ID = 0;
 function dieSVG(sides, sparkle) {
-  const [o, l] = DIE_SHAPE[sides] || DIE_SHAPE[20], id = 'dg' + (++DIE_ID);
+  // A D2 is rolled on a d4 marked 1, 2, 1, 2.
+  const [o, l] = DIE_SHAPE[sides === 2 ? 4 : sides] || DIE_SHAPE[20], id = 'dg' + (++DIE_ID);
   // Sparkle flecks sit around the edge of the face, never over the number.
   const fleck = sparkle ? Array.from({length: 6}, () => { const a = Math.random() * 6.283, r = 24 + Math.random() * 10; return `<circle class="ds" cx="${(50 + Math.cos(a) * r).toFixed(1)}" cy="${(54 + Math.sin(a) * r * .9).toFixed(1)}" r="${(.8 + Math.random() * 1.3).toFixed(1)}"/>`; }).join('') : '';
   return `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="${id}" cx="36%" cy="28%" r="80%"><stop offset="0" style="stop-color:var(--dh,#fffaf0)"/><stop offset=".45" style="stop-color:var(--df,#efe4c8)"/><stop offset="1" style="stop-color:var(--dd,#8a7350)"/></radialGradient></defs><path d="${o}" fill="url(#${id})"/>${fleck}<path class="dl" d="${l}"/><path class="do" d="${o}"/></svg>`;
@@ -46,7 +46,7 @@ function diceFx(e) {
   const r = (foe ? win : win.closest('.hero') || win).getBoundingClientRect();
   const x = foe ? r.left + scrollX + 8 + e.slot * step : r.right + scrollX - 14 - size - (1 - e.slot) * step;
   const y = foe ? r.top + scrollY + 8 : r.top + scrollY + 14;
-  const cls = 'fx-die' + (e.dmg ? ' dmg' : '') + (e.crit ? ' crit' : '') + (e.fumble ? ' fumble' : '') + (e.miss ? ' missed' : '') + (foe ? '' : ' small') + (e.alt ? ' alt' : '') + (e.sides === 2 && !e.token ? ' d2' : '');
+  const cls = 'fx-die' + (e.dmg ? ' dmg' : '') + (e.crit ? ' crit' : '') + (e.fumble ? ' fumble' : '') + (e.miss ? ' missed' : '') + (foe ? '' : ' small') + (e.alt ? ' alt' : '');
   const cap = e.cap || '', post = e.post || 0;
   const hold = Math.round((e.hold ?? 1300) * 1.2), life = e.tumble + post + hold;   // dice stay on screen 20% longer before fading (Build 97)
   const el = document.createElement('div'); el.className = cls;
