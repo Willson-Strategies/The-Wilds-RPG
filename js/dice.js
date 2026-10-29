@@ -92,7 +92,7 @@ function runMods(el, e) {
     setTimeout(() => c.classList.add('in'), MOD_STEP * .62);
     setTimeout(() => { c.remove(); num.textContent = m.to; num.classList.remove('bump'); void num.offsetWidth; num.classList.add('bump'); modSound(m.neg); }, MOD_STEP * .62 + 230);
   }, MOD_PAUSE + k * MOD_STEP));
-  setTimeout(() => el.isConnected && el.classList.add('judged'), MOD_PAUSE + mods.length * MOD_STEP);
+  setTimeout(() => { if (!el.isConnected) return; el.classList.add('judged'); if (!e.dmg && e.cap) verdictSound(!e.miss); }, MOD_PAUSE + mods.length * MOD_STEP);
 }
 /* Darkens the screen behind the dice while they roll and add up, so they stand out. */
 let DIM_END = 0, DIM_T = null;
@@ -103,12 +103,46 @@ function dimFor(ms) {
   const off = () => { const left = DIM_END - Date.now(); if (left > 0) DIM_T = setTimeout(off, left + 250); else d.classList.remove('on'); };
   DIM_T = setTimeout(off, ms + 250);
 }
+/* Build 117: each modifier lands with a soft low "breath" of air and a warm hum, not a pop. */
+function noiseBuf(len) { const b = AC.createBuffer(1, Math.ceil(AC.sampleRate * len), AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
 function modSound(neg) {
   if (!AC || AC.state !== 'running') return;
-  const t = AC.currentTime + .005, o = AC.createOscillator(), g = AC.createGain(), f = neg ? 520 : 760;
-  o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(neg ? f * .7 : f * 1.5, t + .09);
-  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.13, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .2);
-  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + .22);
+  const t = AC.currentTime + .005, n = AC.createBufferSource(), lp = AC.createBiquadFilter(), ng = AC.createGain();
+  n.buffer = noiseBuf(.35); lp.type = 'lowpass'; lp.Q.value = 3;
+  lp.frequency.setValueAtTime(neg ? 900 : 500, t); lp.frequency.exponentialRampToValueAtTime(neg ? 300 : 1400, t + .22);
+  ng.gain.setValueAtTime(.0001, t); ng.gain.exponentialRampToValueAtTime(.09, t + .06); ng.gain.exponentialRampToValueAtTime(.0001, t + .32);
+  n.connect(lp); lp.connect(ng); ng.connect(sfxBus); n.start(t); n.stop(t + .35);
+  const o = AC.createOscillator(), g = AC.createGain(), f = neg ? 130 : 196;
+  o.type = 'sine'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(neg ? f * .8 : f * 1.12, t + .25);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07, t + .05); g.gain.exponentialRampToValueAtTime(.0001, t + .34);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + .36);
+}
+/* The to-hit verdict: a rising aura when the roll meets the AC, a dull, sinking thud when it falls short. */
+function verdictSound(hit) {
+  if (!AC || AC.state !== 'running') return;
+  const t = AC.currentTime + .01;
+  if (hit) {
+    [[110, .05], [165, .04], [220, .035], [330.5, .018], [441, .01]].forEach(([f, v], k) => {
+      const o = AC.createOscillator(), g = AC.createGain(); o.type = k ? 'sine' : 'triangle';
+      o.frequency.setValueAtTime(f * .985, t); o.frequency.linearRampToValueAtTime(f * (1 + k * .002), t + .5);
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .14); g.gain.exponentialRampToValueAtTime(.0001, t + 1.1);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.15);
+    });
+    const n = AC.createBufferSource(), bp = AC.createBiquadFilter(), ng = AC.createGain();
+    n.buffer = noiseBuf(.9); bp.type = 'bandpass'; bp.Q.value = 6;
+    bp.frequency.setValueAtTime(600, t); bp.frequency.exponentialRampToValueAtTime(2600, t + .7);
+    ng.gain.setValueAtTime(.0001, t); ng.gain.exponentialRampToValueAtTime(.05, t + .25); ng.gain.exponentialRampToValueAtTime(.0001, t + .9);
+    n.connect(bp); bp.connect(ng); ng.connect(sfxBus); n.start(t); n.stop(t + .9);
+  } else {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(48, t + .35);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.12, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .45);
+    o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + .47);
+    const n = AC.createBufferSource(), lp = AC.createBiquadFilter(), ng = AC.createGain();
+    n.buffer = noiseBuf(.3); lp.type = 'lowpass'; lp.frequency.value = 350;
+    ng.gain.setValueAtTime(.0001, t); ng.gain.exponentialRampToValueAtTime(.08, t + .02); ng.gain.exponentialRampToValueAtTime(.0001, t + .28);
+    n.connect(lp); lp.connect(ng); ng.connect(sfxBus); n.start(t); n.stop(t + .3);
+  }
 }
 /* Modifier chips for a die: pairs of [icon, value, multiplier?] in order, skipping zeros, with the running total. */
 const modIco = {stat: k => `<span class="dmi">${STAT_SVG[k]}</span>`, item: (n, st) => img(n, st || 0, 'dmi'), mon: f => MONS[f.name] ? `<img class="dmi mon" alt="" src="${MONS[f.name]}">` : '', shield: () => `<span class="dmi">${SHIELD_SVG}</span>`};
