@@ -3,6 +3,15 @@
 Newest first. One short entry per build: what changed for the player, and why when it matters.
 Rule changes are also made in the "RPG Base line" Google Doc. The repository history has every line-by-line change.
 
+## Build 117 · 29 Oct 2026
+- **Dice with drama** (Tom's feedback). Each die rolls, then every modifier appears under it with where it comes from (the weapon's picture, the DEX, STR or INT icon, or the monster's face), flies into the die and adds to the number. The to-hit die then shows the AC it had to reach and HIT or MISS. Weapons with no damage dice (most starting weapons) show a round damage token that adds up the same way. Dice are bigger, roll more slowly, and the screen darkens behind them while they roll.
+- Damage spells roll and add up their dice before the spell flies.
+- **No more flat weapon damage.** The Staff, Dagger, Spear, Bow and Sling roll a D2 (+1 and +0 before), the Mace a D3 (was +2), and the starting weapons roll too: the Fighter's Sword a D3, the Elf's Spear a D2. A D2 is rolled on a d4 marked 1, 2, 1, 2. The rules Doc is updated to match.
+- A hero with no weapon and no spells can no longer attack bare-handed: they can only wait or flee.
+- A monster (or hero) brought down by the second blow of a Double Strike no longer greys out while the dice are still adding up; its card and ailment icons stay until the killing blow lands.
+- Dice sounds: each modifier lands with a soft breath and hum instead of a pop, and a to-hit roll that falls short ends on a dull thud. A hit makes no sound: every die of a hit glows gold instead (crits glow orange, as before).
+- After a win, each hero's XP bar fills gradually. On a level up the bar flashes, a chime plays, and the card glows gold until the victory screen is closed.
+
 ## Build 116 · 28 Oct 2026
 - **Moved to GitHub.** The game is split from one large file into folders (`js/`, `css/`, `data/`, `art/`, `audio/`), with automatic checks (`tests/check.py`) and a bundler for the Claude preview (`tools/build.py`). No change to gameplay.
 

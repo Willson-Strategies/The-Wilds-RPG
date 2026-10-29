@@ -88,6 +88,7 @@ function checkEnd() {
 function victory() {
   if (!S.battle) return;
   const B = S.battle, gains = Object.fromEntries(S.party.map(h => [h.id, 0]));
+  const before = S.party.map(h => ({lvl: h.level, xp: h.xp}));
   const avg = avgLevel();
   B.kills.forEach(k => {
     const xp = XP_MON[k.lvl] || 10;
@@ -136,8 +137,44 @@ function victory() {
   }
   S.lastResult = res; S.battle = null; scheduleEnc(); save();
   const back = S.returning; S.returning = false;
-  modal(`<h2>Victory</h2>${bossTxt}<div style="display:grid;gap:4px">${lines.map(l => `<div>${l}</div>`).join('')}${gold ? `<div><b>${gold} GP</b> collected.</div>` : ''}${found.length ? `<div class="row">Loot: ${found.map(n => img(n) + ' ' + n).join(', ')}</div>` : ''}${ups.map(u => `<div><b>${u}</b></div>`).join('')}</div><div class="row" style="margin-top:12px"><button class="btn red" data-close>${back ? 'Continue to the castle' : 'Onward'}</button></div>`,
-    () => { if (back) { S.loc = 'castle'; castleTab = 'square'; restAll(); } save(); go(); });
+  xpRise(before, () => modal(`<h2>Victory</h2>${bossTxt}<div style="display:grid;gap:4px">${lines.map(l => `<div>${l}</div>`).join('')}${gold ? `<div><b>${gold} GP</b> collected.</div>` : ''}${found.length ? `<div class="row">Loot: ${found.map(n => img(n) + ' ' + n).join(', ')}</div>` : ''}${ups.map(u => `<div><b>${u}</b></div>`).join('')}</div><div class="row" style="margin-top:12px"><button class="btn red" data-close>${back ? 'Continue to the castle' : 'Onward'}</button></div>`,
+    () => { if (back) { S.loc = 'castle'; castleTab = 'square'; restAll(); } save(); go(); }));
+}
+/* Build 117 (Tom's feedback): after a win each hero's XP bar fills gradually instead of snapping. On a level up the
+   bar flashes and the hero's card keeps a gold aura until the victory screen is closed. Then the result screen opens. */
+const xpFrac = (L, xp) => L >= 10 ? 1 : Math.max(0, Math.min(1, (xp - XP_CUM[L]) / (XP_CUM[L + 1] - XP_CUM[L])));
+function xpRise(before, done) {
+  const FILL = 1100, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let longest = 0;
+  S.party.forEach((h, i) => {
+    const card = document.querySelector(`.hero[data-hero="${i}"]`), bar = card && card.querySelector('.bar2.xp i'), b = before[i];
+    if (!bar || reduce) return;
+    const nums = card.querySelector('.nums > span:last-child'), cl = card.querySelector('.cl');
+    const gain = h.xp - b.xp, ups = h.level - b.lvl, t0 = 250 + i * 160;
+    const set = (pct, ms) => { bar.style.transition = ms ? `width ${ms}ms cubic-bezier(.35,.6,.3,1)` : 'none'; bar.style.width = pct * 100 + '%'; };
+    const count = (from, to, ms) => { const s0 = performance.now(); const tick = () => { const k = Math.min(1, (performance.now() - s0) / ms); if (nums) nums.textContent = `XP ${Math.round(from + (to - from) * k)}${h.level < 10 ? ' / ' + XP_CUM[h.level + 1] : ''}`; if (k < 1) requestAnimationFrame(tick); }; tick(); };
+    set(xpFrac(b.lvl, b.xp), 0);
+    if (gain > 0) setTimeout(() => { const r = bar.getBoundingClientRect(); fxAt('fx-xpgain', r.left + scrollX + r.width / 2, r.top + scrollY - 8, 0, 0, '', `+${gain} XP`); }, t0);
+    let t = t0;
+    if (!ups) { setTimeout(() => { set(xpFrac(h.level, h.xp), FILL); count(b.xp, h.xp, FILL); }, t); t += FILL; }
+    else {
+      setTimeout(() => { set(1, FILL * .8); count(b.xp, XP_CUM[b.lvl + 1], FILL * .8); }, t); t += FILL * .8;
+      setTimeout(() => {
+        card.classList.add('lvlup'); bar.parentNode.classList.add('flash'); levelSound();
+        if (cl) cl.innerHTML = cl.innerHTML.replace(/Level \d+/, 'Level ' + h.level);
+      }, t); t += 700;
+      setTimeout(() => { set(0, 0); requestAnimationFrame(() => { set(xpFrac(h.level, h.xp), FILL * .8); count(XP_CUM[h.level], h.xp, FILL * .8); }); }, t); t += FILL * .8;
+    }
+    longest = Math.max(longest, t);
+  });
+  setTimeout(done, longest ? longest + 450 : 0);
+}
+function levelSound() {
+  if (!AC || AC.state !== 'running') return;
+  const t = AC.currentTime + .01;
+  [523, 659, 784, 1047].forEach((f, k) => { const o = AC.createOscillator(), g = AC.createGain(), at = t + k * .09;
+    o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(.12, at + .02); g.gain.exponentialRampToValueAtTime(.0001, at + .7);
+    o.connect(g); g.connect(sfxBus); o.start(at); o.stop(at + .72); });
 }
 /* fleeing: only the party leader (front-most living hero) can try */
 const partyLeader = () => S.party.find(h => !h.dead);

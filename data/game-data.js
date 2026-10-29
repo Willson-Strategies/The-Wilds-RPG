@@ -168,7 +168,7 @@ const DATA = {
    "name": "Staff",
    "tier": "Basic",
    "hit": 0,
-   "dmg": "+1",
+   "dmg": "+D2",
    "price": 1,
    "note": ""
   },
@@ -176,7 +176,7 @@ const DATA = {
    "name": "Dagger",
    "tier": "Basic",
    "hit": 1,
-   "dmg": "+1",
+   "dmg": "+D2",
    "price": 5,
    "note": ""
   },
@@ -184,7 +184,7 @@ const DATA = {
    "name": "Sling",
    "tier": "Basic",
    "hit": 0,
-   "dmg": "+0",
+   "dmg": "+D2",
    "price": 3,
    "note": "Range 5"
   },
@@ -192,7 +192,7 @@ const DATA = {
    "name": "Spear",
    "tier": "Light",
    "hit": 2,
-   "dmg": "+1",
+   "dmg": "+D2",
    "price": 10,
    "note": ""
   },
@@ -200,7 +200,7 @@ const DATA = {
    "name": "Mace",
    "tier": "Light",
    "hit": 1,
-   "dmg": "+2",
+   "dmg": "+D3",
    "price": 10,
    "note": "+50% damage to undead"
   },
@@ -232,7 +232,7 @@ const DATA = {
    "name": "Bow",
    "tier": "Standard",
    "hit": 1,
-   "dmg": "+1",
+   "dmg": "+D2",
    "price": 50,
    "note": "Range 8"
   },

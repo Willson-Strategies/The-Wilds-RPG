@@ -115,7 +115,7 @@ const fangs = (w, up) => `<svg width="${w}" height="${w * .32}" viewBox="0 0 100
 let INPUT_LOCK = 0, LOCK_T = null, LOG_SEEN = null;
 function fxLockMs() {
   let t = 0;
-  FXQ.forEach(e => { if (e.k === 'dice') t = Math.max(t, (e.at || 0) + (e.tumble || 0)); else if (e.k === 'num' || e.k === 'miss' || e.k === 'tag') t = Math.max(t, e.at || 0); });
+  FXQ.forEach(e => { if (e.k === 'dice') t = Math.max(t, (e.at || 0) + (e.tumble || 0) + (e.post || 0)); else if (e.k === 'num' || e.k === 'miss' || e.k === 'tag') t = Math.max(t, e.at || 0); });
   return t ? t + 350 : 0;
 }
 function playFX() {
@@ -123,7 +123,7 @@ function playFX() {
   const q = FXQ; FXQ = [];
   const t = {}; let end = 0;
   q.forEach(e => {
-    if (e.k === 'dice') { setTimeout(() => diceFx(e), e.at || 0); end = Math.max(end, (e.at || 0) + 900); return; }   // dice sit beside the other effects, never queue behind them
+    if (e.k === 'dice') { setTimeout(() => diceFx(e), e.at || 0); end = Math.max(end, (e.at || 0) + (e.tumble || 0) + (e.post || 0)); return; }   // dice sit beside the other effects, never queue behind them
     const key = e.side + e.i, delay = Math.max(t[key] || 0, e.at || 0);
     t[key] = delay + (e.k === 'num' || e.k === 'miss' || e.k === 'tag' ? 330 : e.k === 'ail' ? 260 : 110);
     end = Math.max(end, delay + (e.crit || e.dbl ? 1900 : 1500));
