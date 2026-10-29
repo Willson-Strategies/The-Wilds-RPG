@@ -115,7 +115,7 @@ async def main():
           window.W = {clickWhileDice: 0, lastDie: 0, victoryAt: 0};
           const v = victory; victory = function () { W.victoryAt = performance.now(); W.dice = document.querySelectorAll('.fx-die').length; W.shownHP = [...document.querySelectorAll('[data-hpt^=m]')].map(x => x.textContent).join(); return v.apply(this, arguments); };
           setInterval(() => { const rolling = [...document.querySelectorAll('.fx-die')].filter(d => !d.classList.contains('settled')).length;
-            if (document.querySelector('.fx-die')) W.lastDie = performance.now(); if (rolling && document.querySelector('#aMelee')) W.clickWhileDice++; }, 40); })()""")
+            if (document.querySelector('.fx-die')) W.lastDie = performance.now(); if (rolling && document.querySelector('#aMelee')) W.clickWhileDice++;}, 40); })()""")
         for _ in range(400):
             if not await pg.evaluate("!!S.battle"): break
             if await pg.locator('#aMelee').count():
@@ -131,6 +131,21 @@ async def main():
         check('no action is possible while dice are rolling', W['clickWhileDice'] == 0, f"{W['clickWhileDice']} times")
         check('victory waits for the last die', W['victoryAt'] >= W['lastDie'] - 50 and W.get('dice', 1) == 0 and set((W.get('shownHP') or '0').split(',')) == {'0'},
               f"victory {round(W['victoryAt'] - W['lastDie'])} ms after the last die")
+
+        # Build 117: a Double Strike whose second blow kills: the card must not grey out while dice are still adding up
+        await pg.evaluate("""(() => { S.loc = 'wild'; S.party.forEach(h => { h.dead = false; h.hp = h.max; h.status = {}; });
+          startBattle(false, {foes: [DATA.monsters[0].name], direct: true}); delete S.battle.phase;
+          const f = S.battle.foes[0]; f.hp = 1; f.ac = 15; const h = S.party[0]; h.equip.melee = newItem('Sword');
+          S.battle.cur = {side: 'p', i: 0}; S.battle.queue = [];
+          const real = Math.random; let q = [.99, .06]; Math.random = () => q.length ? q.shift() : .99;
+          heroAttack(h, f, false); Math.random = real; render();
+          window.G = {early: 0}; const t = setInterval(() => { const card = document.querySelector('.foe[data-foe="0"]');
+            if (card && card.classList.contains('dead') && document.querySelector('.fx-die:not(.judged)')) G.early++; }, 30);
+          setTimeout(() => clearInterval(t), 12000); })()""")
+        await pg.wait_for_timeout(12500)
+        G = await pg.evaluate("({early: G.early, dead: S.battle ? S.battle.foes[0].dead : true, grey: !!document.querySelector('.foe.dead')})")
+        check('a monster killed by a Double Strike greys out only after the dice add up', G['early'] == 0 and G['dead'], f"{G['early']} early moments")
+        await pg.evaluate("S.battle = null")
 
         check('no script errors', not errs, '; '.join(errs[:3]))
         real_missing = [u for u in missing if 'fonts.g' not in u]

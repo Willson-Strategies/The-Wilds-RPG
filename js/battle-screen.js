@@ -48,7 +48,7 @@ function render() {
   const foes = B.foes.map((f, i) => {
     const chips = Object.keys(f.status).filter(k => !NOT_CHIP.includes(k)).map(k => `<span class="chip ${k}${chipLate(f.status[k])}>${k}</span>`).join(' ');
     return `<button class="foe ${f.dead && !f.dyingFx ? 'dead' : ''} ${targetFoe && !f.dead ? 'targetable' : ''}" data-foe="${i}" ${targetFoe && !f.dead ? '' : 'tabindex="-1"'}>
-      <div class="win">${MONS[f.name] ? `<img src="${MONS[f.name]}" alt="">` : `<div class="seal">${f.name[0]}</div>`}${f.dead ? '' : stOverlay(f.status) + ailIcons(f.status)}</div>
+      <div class="win">${MONS[f.name] ? `<img src="${MONS[f.name]}" alt="">` : `<div class="seal">${f.name[0]}</div>`}${f.dead && !f.dyingFx ? '' : stOverlay(f.status) + ailIcons(f.status)}</div>
       <div class="row" style="flex-wrap:nowrap"><div style="min-width:0"><div class="fn">${esc(f.label)}</div><div class="ft">Level ${f.lvl} ${f.type} · ${acBadge(foeAC(f), 'inl enemyac' + (foeAC(f) < f.ac ? ' lowered' : ''))}</div></div></div>
       <div class="bar2">${hpBar('m' + i, f.hp, f.max)}</div><div class="nums" style="font-family:var(--label);font-size:.66rem;color:var(--muted)">HP ${hpTxt('m' + i, f.hp, f.max)} / ${f.max}</div>
       ${chips ? `<div>${chips}</div>` : ''}</button>`;

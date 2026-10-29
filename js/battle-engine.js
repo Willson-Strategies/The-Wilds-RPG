@@ -124,7 +124,10 @@ function damage(u, d, by, opts = {}) {
   const isHero = S.party.includes(u);
   fx({k: 'num', u, d, pct: Math.max(0, u.hp) / u.max * 100, crit: opts.crit, dbl: opts.dbl, col: opts.poison ? 'poison' : opts.col || (isHero ? 'hurt' : opts.magic ? 'magic' : '')});
   if (u.hp <= 0 && !u.dead) {
-    u.dead = true; u.dyingFx = true; setTimeout(() => { if (u.dyingFx) { delete u.dyingFx; const el = unitCard(u); if (el) el.classList.add('dead'); } }, 4500); u.hp = 0; u.status = {};
+    u.dead = true; u.dyingFx = true; u.hp = 0;
+    // A fallback only: the card greys when the killing blow's number plays. It must never beat the dice, which can run
+    // long with modifiers and a Double Strike (Build 117), so it waits until well after the blow is due.
+    setTimeout(() => { if (u.dyingFx) { delete u.dyingFx; u.status = {}; const el = unitCard(u); if (el) el.classList.add('dead'); } }, Math.max(4500, FX_LEAD + 3000));
     if (S.party.includes(u)) { u.fellInBattle = true; addLog(`<span class="bad">${esc(u.name)} falls!</span>`); ['armour', 'shield'].forEach(k => addWear(u.equip[k], R(10) / 20)); }   // falling costs worn armour and shield 1-10% durability
     else { addLog(`<span class="crit">${nameOf(u)} is slain.</span>`); S.battle.kills.push({lvl: u.lvl, by: u.lastBy}); }
   }

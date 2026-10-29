@@ -101,7 +101,7 @@ function heroCard(h, i, extra = '') {
   const nxt = h.level >= 10 ? 1 : (h.xp - XP_CUM[h.level]) / (XP_CUM[h.level + 1] - XP_CUM[h.level]);
   const chips = Object.keys(h.status).filter(k => h.status[k] && !NOT_CHIP.includes(k)).map(k => `<span class="chip ${k}${chipLate(h.status[k])}>${k === 'WARD' ? 'Warded' : k === 'RANGE' ? 'At range +2 AC' : k}</span>`).join(' ');
   return `<div class="hero ${h.dead && !h.dyingFx ? 'dead' : ''} ${extra}" data-hero="${i}">
-    <div class="pcol"><div class="pwrap"><img class="head" alt="" src="${HEADS[h.cls]}">${h.dead ? '' : stOverlay(h.status)}${ailIcons(h.status)}</div>${acBadge(heroAC(h), 'under' + (h.status && h.status.RANGE ? ' boosted' : ''))}</div>
+    <div class="pcol"><div class="pwrap"><img class="head" alt="" src="${HEADS[h.cls]}">${h.dead && !h.dyingFx ? '' : stOverlay(h.status)}${ailIcons(h.status)}</div>${acBadge(heroAC(h), 'under' + (h.status && h.status.RANGE ? ' boosted' : ''))}</div>
     <div style="min-width:0"><div class="nm">${esc(h.name)} ${h.dead && !h.dyingFx ? '<span class="chip DOWN">Fallen</span>' : ''}</div>
       <div class="cl">Level ${h.level} ${h.cls} · ${acBadge(heroAC(h), 'inl')}</div></div>
     <div style="grid-column:1/-1;display:grid;gap:3px">

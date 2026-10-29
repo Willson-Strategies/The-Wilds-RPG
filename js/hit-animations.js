@@ -234,7 +234,7 @@ function fxOne(e) {
       if (e.heal) break;
       if (e.k === 'num' && e.d > 0) recoil(win, e.crit);   // every hit makes the portrait recoil
       if (e.k === 'num' && e.d > 0 && e.side === 'p' && S.party[e.i]) hurtCry(S.party[e.i], e.pct === 0);
-      if (e.k === 'num' && e.pct === 0) { const u = e.side === 'm' ? S.battle && S.battle.foes[e.i] : S.party[e.i]; setTimeout(() => { if (u) delete u.dyingFx; const card = win.closest('.foe,.hero'); if (card && card.isConnected) card.classList.add('dead'); }, 280); }   // as the HP bar empties
+      if (e.k === 'num' && e.pct === 0) { const u = e.side === 'm' ? S.battle && S.battle.foes[e.i] : S.party[e.i]; setTimeout(() => { if (u) { delete u.dyingFx; if (u.dead) u.status = {}; } const card = win.closest('.foe,.hero'); if (card && card.isConnected) card.classList.add('dead'); }, 280); }   // as the HP bar empties
       if (e.crit || e.flash) win.insertAdjacentHTML('beforeend', '<div class="fx-flash"></div>');
       break;
     }
