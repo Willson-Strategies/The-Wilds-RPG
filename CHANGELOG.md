@@ -3,6 +3,11 @@
 Newest first. One short entry per build: what changed for the player, and why when it matters.
 Rule changes are also made in the "RPG Base line" Google Doc. The repository history has every line-by-line change.
 
+## Build 117 · 29 Oct 2026
+- **Dice with drama** (Tom's feedback). Each die rolls, then every modifier appears under it with where it comes from (the weapon's picture, the DEX, STR or INT icon, or the monster's face), flies into the die and adds to the number. The to-hit die then shows the AC it had to reach and HIT or MISS. Weapons with no damage dice (most starting weapons) show a round damage token that adds up the same way. Dice are bigger, roll more slowly, and the screen darkens behind them while they roll.
+- Damage spells roll and add up their dice before the spell flies.
+- After a win, each hero's XP bar fills gradually. On a level up the bar flashes, a chime plays, and the card glows gold until the victory screen is closed.
+
 ## Build 116 · 28 Oct 2026
 - **Moved to GitHub.** The game is split from one large file into folders (`js/`, `css/`, `data/`, `art/`, `audio/`), with automatic checks (`tests/check.py`) and a bundler for the Claude preview (`tools/build.py`). No change to gameplay.
 

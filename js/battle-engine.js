@@ -163,23 +163,33 @@ function heroSwings(h, f, ranged, it, w) {
   let t = FX_LEAD;
   for (let s = 0; s < swings && !f.dead; s++) {
     const nat = R(20), bonus = it ? weaponHit(h, it) : dexHit(h.st.DEX);
-    const keen = h.cls === 'Thief' && nat >= 15;
-    const hit = nat !== 1 && (nat === 20 || keen || nat + bonus >= foeAC(f));
+    const keen = h.cls === 'Thief' && nat >= 15, ac = foeAC(f);
+    const hit = nat !== 1 && (nat === 20 || keen || nat + bonus >= ac);
     const crit = nat === 20 || keen || (hit && w.critOn && nat >= w.critOn);   // e.g. Gorewarden's Axe: a hit on 16-19 also crits
     const dr = hit ? rollShown(w.dmg) : null;
     const evaded = hit && /evades 15%/.test(f.special) && Math.random() < .15;
-    const tl = diceTimeline(t, hit && !evaded && dr.sides, s === 0);
-    dieAt(f, {sides: 20, val: nat, slot: s * 2, cap: hitCap(nat, bonus, foeAC(f)), crit, fumble: nat === 1, miss: !hit, label: 'to hit', ...diePal(h)}, t, tl.t20, tl.impact);
+    // Where every point comes from, added to the dice one at a time (Build 117).
+    const st = it ? wearH(it) : 0, wi = it ? modIco.item(it.name, st) : '';
+    const hitMods = nat === 1 ? [] : modList(nat, [[modIco.stat('DEX'), dexHit(h.st.DEX)], [wi, it ? WPN[it.name].hit || 0 : 0], [wi, -(it ? WEAR_W[st][0] : 0), 0, 'worn']]);
+    let d = 0, dmgMods = [];
+    if (hit) {
+      const strB = strDmg(h.st.STR), wearB = it ? WEAR_W[st][1] : 0, undead = /undead/.test(w.note) && f.type === 'Undead';
+      d = dr.face + dr.mod + strB - wearB;
+      if (undead) d = Math.floor(d * 1.5);
+      if (crit) d = Math.floor(d * 1.5);
+      d = Math.max(crit ? 2 : 1, d);
+      dmgMods = modList(dr.face, [[wi, dr.mod], [modIco.stat('STR'), strB], [wi, -wearB, 0, 'worn'], [wi, 0, undead ? 1.5 : 1, 'undead'], ['', 0, crit ? 1.5 : 1, 'crit']]);
+      const last = dmgMods.length ? dmgMods[dmgMods.length - 1].to : dr.face;
+      if (last !== d) dmgMods.push({ico: '', txt: 'at least ' + d, to: d});
+    }
+    const withDmg = hit && !evaded && (dr.sides ? true : 'token');   // a flat-damage weapon shows a damage token instead of a die
+    const tl = diceTimeline(t, withDmg, s === 0, hitMods.length, withDmg ? dmgMods.length : 0);
+    dieAt(f, {sides: 20, val: nat, slot: 0, mods: hitMods, post: tl.p20, cap: hitCap(nat, nat + bonus, ac, hit, keen), crit, fumble: nat === 1, miss: !hit, label: 'to hit', ...diePal(h)}, t, tl.t20, tl.impact);
     if (s === 0) SWING_CHARGE_AT = tl.chargeAt;
     const dbl = swings === 2 && s === 0;   // the first blow of a double strike carries the "Double Strike!" label
-    FX_LEAD = tl.impact; DICE_SHIFT = Math.max(DICE_SHIFT, tl.impact); t = tl.impact + 450;
-    if (!hit) { fx({k: 'miss', u: f, dbl}); addLog(`<span class="miss">${esc(h.name)} ${ranged ? 'shoots at' : 'swings at'} ${nameOf(f)} and misses (${nat}${bonus ? '+' + bonus : ''} vs AC ${foeAC(f)}).</span>`); continue; }
-    const flat = dr.mod + strDmg(h.st.STR) - (it ? WEAR_W[wearH(it)][1] : 0);
-    let d = dr.face + flat;
-    if (dr.sides && !evaded) dieAt(f, {sides: dr.multi ? Math.max(4, Math.min(20, diceParts(w.dmg).sides)) : dr.sides, val: dr.face, slot: s * 2 + 1, dmg: true, crit, cap: (flat ? signed(flat) : '') + (crit ? ' ×1.5' : ''), label: dr.multi ? diceParts(w.dmg).n + 'D' + diceParts(w.dmg).sides : 'damage', ...diePal(h)}, tl.dStart, tl.tD, tl.impact);
-    if (/undead/.test(w.note) && f.type === 'Undead') d = Math.floor(d * 1.5);
-    if (crit) d = Math.floor(d * 1.5);
-    d = Math.max(crit ? 2 : 1, d);
+    FX_LEAD = tl.impact; DICE_SHIFT = Math.max(DICE_SHIFT, tl.impact); t = tl.impact + 1250;   // the second blow's dice wait for the first pair to clear
+    if (!hit) { fx({k: 'miss', u: f, dbl}); addLog(`<span class="miss">${esc(h.name)} ${ranged ? 'shoots at' : 'swings at'} ${nameOf(f)} and misses (${nat}${bonus ? '+' + bonus : ''} vs AC ${ac}).</span>`); continue; }
+    if (withDmg) dieAt(f, {token: !dr.sides, sides: dr.multi ? Math.max(4, Math.min(20, diceParts(w.dmg).sides)) : dr.sides, val: dr.face, slot: 1, dmg: true, crit, mods: dmgMods, post: tl.pD, label: dr.multi ? diceParts(w.dmg).n + 'D' + diceParts(w.dmg).sides : 'damage', ...diePal(h)}, tl.dStart, tl.tD, tl.impact);
     if (evaded) { fx({k: 'miss', u: f, dbl}); addLog(`<span class="miss">${nameOf(f)} twists away from ${esc(h.name)}'s blow.</span>`); continue; }
     fx(Object.assign({u: f}, weaponStyle(it, ranged)));
     const dealt = damage(f, d, h.id, {crit, dbl});
@@ -208,29 +218,34 @@ function castSpell(h, slot, target) {
     if (s.splash && (!target || target.dead)) target = B.foes.find(f => !f.dead);
     const targets = s.target === 'all' ? chainOrder(h, B.foes.filter(f => !f.dead)) : s.splash ? [target, ...B.foes.filter(f => !f.dead && f !== target)] : [target];
     let rolled = 0, castBonus;
+    // The damage dice roll and add up first; the spell flies once they have (Build 117).
+    const PRE = 720 + modsTime(2, false) + 150; DICE_SHIFT = Math.max(DICE_SHIFT, PRE + CHARGE);
     const proj = sp === 'Magic Missile' || sp === 'Advanced Magic Missile' ? 'missile' : s.splash ? 'fireball' : sp === 'Lightning Bolt' ? 'bolt' : s.undead ? 'skull' : null;
-    if (s.undead) playSfx('undead_ward', .9);
-    if (proj && targets[0]) { FX_LEAD = 0; fx({k: proj, u: targets[0], from: h, volley: sp === 'Advanced Magic Missile' ? 5 : 1, chain: targets, abyss: sp === 'Undead Abyss'}); }
+    if (s.undead) setTimeout(() => playSfx('undead_ward', .9), PRE);
+    if (proj && targets[0]) { FX_LEAD = PRE; fx({k: proj, u: targets[0], from: h, volley: sp === 'Advanced Magic Missile' ? 5 : 1, chain: targets, abyss: sp === 'Undead Abyss'}); }
     targets.forEach((f, n) => {
-      FX_LEAD = proj === 'missile' ? MM_HIT + (sp === 'Advanced Magic Missile' ? 4 * 70 : 0) : proj === 'fireball' ? FB_HIT + n * FB_SPREAD : proj === 'bolt' ? BOLT_HIT + n * BOLT_STEP : proj === 'skull' ? SKULL_HIT : 0;
+      FX_LEAD = PRE + (proj === 'missile' ? MM_HIT + (sp === 'Advanced Magic Missile' ? 4 * 70 : 0) : proj === 'fireball' ? FB_HIT + n * FB_SPREAD : proj === 'bolt' ? BOLT_HIT + n * BOLT_STEP : proj === 'skull' ? SKULL_HIT : 0);
       if (s.undead && f.type !== 'Undead') { fx({k: 'tag', u: f, text: 'No effect', col: '#b8a888'}); addLog(`<span class="miss">The holy word has no power over ${nameOf(f)}.</span>`); return; }
       const fresh = !(s.splash && rolled), rs = fresh ? rollShown(s.dice) : null;
       const r = fresh ? rs.total : rolled; rolled = Math.max(rolled, r);   // Fireball rolls once for the whole blast
-      if (fresh && rs.sides) dieFx(f, {sides: rs.sides, val: rs.face, slot: 0, dmg: true, cap: (signed(rs.mod) + (h.st.INT >= 8 ? ' +INT' : '')).trim(), label: 'damage', ...diePal(h)});
       fx({k: 'magic', u: f, col: SPELL_COL[sp], small: s.splash && f !== target});
       const fm = sp === 'Fireball' ? fireMult(f) : 1;
       if (fm === 0) { fx({k: 'miss', u: f, spell: true}); addLog(`<span class="miss">${nameOf(f)} is untouched by the flames.</span>`); return; }
       const splash = s.splash && f !== target ? .5 : 1;   // Fireball: full blast on the chosen enemy, half to the rest
       const bonus = s.splash ? (castBonus ??= spellBonus(h, sp)) : spellBonus(h, sp);
+      if (fresh && rs.sides) {   // the spell's own bonus, then the caster's INT, added to the die one at a time
+        const mods = modList(rs.face, [[modIco.item(sp), rs.mod], [modIco.stat('INT'), bonus]]), tm = dieTime(), post = modsTime(mods.length, false), L = FX_LEAD;
+        dieAt(f, {sides: rs.sides, val: rs.face, slot: 0, dmg: true, mods, post, label: 'damage', ...diePal(h)}, 0, tm, L);
+      }
       const dealt = damage(f, Math.max(1, Math.floor((r + bonus) * fm * splash)), h.id, {magic: true});
       addLog(`<span class="hit">${nameOf(f)} takes ${dealt} magic damage.</span>`);
       if (s.ail && !f.dead) applyAil(f, s.ail[0], s.ail[1], {by: h.id});
     });
     FX_LEAD = 0;
     if (s.sparks) for (let k = 0; k < 5; k++) { const live = B.foes.filter(f => !f.dead); if (!live.length) break; const f = live[Math.floor(Math.random() * live.length)]; const d = Math.max(1, Math.floor(rolled / 4)); const others = live.filter(x => x !== f);
-      FX_LEAD = BOLT_HIT + targets.length * BOLT_STEP + 150 + k * 130; fx({k: 'spark', u: f, from: others.length ? others[Math.floor(Math.random() * others.length)] : h}); damage(f, d, h.id, {magic: true}); addLog(`<span class="hit">A spark leaps to ${nameOf(f)} for ${d}.</span>`); }
+      FX_LEAD = PRE + BOLT_HIT + targets.length * BOLT_STEP + 150 + k * 130; fx({k: 'spark', u: f, from: others.length ? others[Math.floor(Math.random() * others.length)] : h}); damage(f, d, h.id, {magic: true}); addLog(`<span class="hit">A spark leaps to ${nameOf(f)} for ${d}.</span>`); }
     FX_LEAD = 0;
-    if (s.self) { const d = roll(s.self); h.hp -= d; FX_LEAD = SKULL_HIT + 250; fx({k: 'num', u: h, d, pct: Math.max(0, h.hp) / h.max * 100, col: 'hurt'}); FX_LEAD = 0; addLog(`<span class="bad">The rite costs ${esc(h.name)} ${d} HP.</span>`); if (h.hp <= 0) { h.hp = 0; h.dead = true; addLog(`<span class="bad">${esc(h.name)} collapses.</span>`); } }
+    if (s.self) { const d = roll(s.self); h.hp -= d; FX_LEAD = PRE + SKULL_HIT + 250; fx({k: 'num', u: h, d, pct: Math.max(0, h.hp) / h.max * 100, col: 'hurt'}); FX_LEAD = 0; addLog(`<span class="bad">The rite costs ${esc(h.name)} ${d} HP.</span>`); if (h.hp <= 0) { h.hp = 0; h.dead = true; addLog(`<span class="bad">${esc(h.name)} collapses.</span>`); } }
   } else if (s.kind === 'ctl') {
     const f = target, base = f.lvl <= 5 ? s.base[0] : s.base[1];
     const sleep = sp === 'Sleep', hitAt = sleep ? SLEEP_HIT : ENT_HIT;
@@ -265,7 +280,7 @@ function monsterAttack(f, h, bonusDice) {
   const base = ATK_BASE;
   // As with heroes: the dice roll first, then the monster lunges and the blow lands.
   FX_LEAD = base; SWING_CHARGE_AT = base; SWING_IMPACT = base + CHARGE;
-  try { monsterBlow(f, h, bonusDice); } finally { FX_LEAD = SWING_CHARGE_AT; fx({k: 'charge', u: f, to: h}); FX_LEAD = 0; ATK_BASE = SWING_IMPACT + 350; }
+  try { monsterBlow(f, h, bonusDice); } finally { FX_LEAD = SWING_CHARGE_AT; fx({k: 'charge', u: f, to: h}); FX_LEAD = 0; ATK_BASE = SWING_IMPACT + 1250; }   // a second attack's dice wait for the first pair to clear
 }
 function monsterBlow(f, h, bonusDice) {
   // Monsters never crit: a natural 20 always hits but deals normal damage.
@@ -277,17 +292,20 @@ function monsterBlow(f, h, bonusDice) {
   const parried = hit && !magic && !ranged && blade && R(100) <= blade;
   const evaded = hit && !parried && !magic && h.cls === 'Thief' && R(100) <= 4 + h.level;
   const dr = hit && !parried && !evaded ? rollShown(f.dmg) : null;
-  const start = FX_LEAD, tl = diceTimeline(start, dr && dr.sides, true);
-  dieAt(h, {sides: 20, val: nat, slot: 0, cap: hitCap(nat, toHit, ac), fumble: nat === 1, miss: !hit, foeRoll: true, pal: 'monster'}, start, tl.t20, tl.impact);
+  const extra = dr && bonusDice ? roll(bonusDice) : 0;
+  let d = dr ? dr.total + extra : 0, skin = false;
+  if (dr && !magic && d > 1 && R(100) <= stoneSkin(h)) { d -= 1; skin = true; }
+  // The monster's own bonuses, shown with its face, then the Dwarf's stone skin (Build 117).
+  const mi = modIco.mon(f), pack = packBonus(f);
+  const hitMods = nat === 1 ? [] : modList(nat, [[mi, f.hit], [mi, pack, 0, 'pack']]);
+  const dmgMods = dr ? modList(dr.face, [[mi, dr.mod], [mi, extra, 0, 'charge'], [modIco.shield(), skin ? -1 : 0, 0, 'stone skin']]) : [];
+  const start = FX_LEAD, tl = diceTimeline(start, dr && (dr.sides ? true : 'token'), true, hitMods.length, dmgMods.length);
+  dieAt(h, {sides: 20, val: nat, slot: 0, mods: hitMods, post: tl.p20, cap: hitCap(nat, nat + toHit, ac, hit), fumble: nat === 1, miss: !hit, foeRoll: true, pal: 'monster'}, start, tl.t20, tl.impact);
   SWING_CHARGE_AT = tl.chargeAt; SWING_IMPACT = tl.impact; FX_LEAD = tl.impact; DICE_SHIFT = Math.max(DICE_SHIFT, tl.impact);
   if (!hit) { fx({k: 'miss', u: h, spell: magic}); addLog(`<span class="miss">${nameOf(f)} attacks ${esc(h.name)} and misses (${nat}+${toHit} vs AC ${ac}).</span>`); return; }
   if (parried) { fx({k: 'miss', u: h, label: 'Parried'}); addLog(`<span class="miss">${esc(h.name)} parries ${nameOf(f)}'s blow with the ${h.equip.melee.name}!</span>`); return; }
   if (evaded) { fx({k: 'miss', u: h, label: 'Evaded'}); addLog(`<span class="miss">${esc(h.name)} evades ${nameOf(f)}'s blow!</span>`); return; }
-  const extra = bonusDice ? roll(bonusDice) : 0;
-  let d = dr.total + extra;
-  if (dr.sides) dieAt(h, {sides: dr.multi ? Math.max(4, Math.min(20, diceParts(f.dmg).sides)) : dr.sides, val: dr.face, slot: 1, dmg: true, cap: signed(dr.mod + extra), pal: 'monster'}, tl.dStart, tl.tD, tl.impact);
-  let skin = false;
-  if (!magic && d > 1 && R(100) <= stoneSkin(h)) { d -= 1; skin = true; }
+  dieAt(h, {token: !dr.sides, sides: dr.multi ? Math.max(4, Math.min(20, diceParts(f.dmg).sides)) : dr.sides, val: dr.face, slot: 1, dmg: true, mods: dmgMods, post: tl.pD, pal: 'monster'}, tl.dStart, tl.tD, tl.impact);
   if (h.status.SLEEP) delete h.status.SLEEP;
   fx(magic ? {k: 'magic', u: h, col: ['#d8b8ff', '#3a1a6a']} : ranged ? {k: 'arrow', u: h} : {k: monsterStyle(f), u: h});
   const dealt = damage(h, d, null);

@@ -209,17 +209,17 @@ p{margin:0 0 8px}
 .fx-die .ds,.pvdie .ds{fill:#fff;opacity:.85}
 .fx-die.alt svg,.pvdie.alt svg{filter:brightness(.72) saturate(1.3) contrast(1.08)}
 .fx-die.fumble.settled{filter:drop-shadow(0 0 7px #d04030) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
-.fx-die b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--label);font-weight:800;font-size:1.05rem;color:var(--dn,#2a1a0e);padding-top:8%;text-shadow:0 1px 1px var(--de,transparent)}
-.fx-die.small b{font-size:.82rem}
+.fx-die b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--label);font-weight:800;font-size:1.35rem;color:var(--dn,#2a1a0e);padding-top:8%;text-shadow:0 1px 1px var(--de,transparent)}
+.fx-die.small b{font-size:1.08rem}
 .fx-die.settled b{animation:diesettle .32s ease-out}
 .fx-die.crit.settled{filter:drop-shadow(0 0 8px #ffb347) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
-.fx-die.missed.settled{opacity:.85}
+.fx-die.missed.judged svg{filter:grayscale(.5) brightness(.75)}
 .fx-die i,.fx-die u{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;font-style:normal;text-decoration:none;font-family:var(--label);font-weight:700;text-shadow:0 1px 0 #000,0 0 4px #000;opacity:0;transition:opacity .2s}
-.fx-die i{top:100%;margin-top:2px;font-size:.72rem;color:#ffe6b0}
+.fx-die i{top:100%;margin-top:3px;font-size:.8rem;color:#ffe6b0}
 .fx-die u{bottom:100%;margin-bottom:1px;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:#d8c8a8}
 .fx-die.small i{font-size:.62rem}
 .fx-die i svg{position:static;display:inline-block;width:9px;height:10px;vertical-align:-1px;margin:0 1px 0 2px;overflow:visible}
-.fx-die.settled i,.fx-die.settled u{opacity:1}
+.fx-die.judged i,.fx-die.settled u{opacity:1}
 @keyframes dietumble{0%{transform:translate(-18px,-26px) rotate(-260deg) scale(.6);opacity:0}25%{opacity:1}70%{transform:translate(3px,2px) rotate(18deg) scale(1.05)}100%{transform:none}}
 @keyframes diesettle{0%{transform:scale(1.5)}100%{transform:none}}
 @keyframes dieout{to{opacity:0;transform:translateY(-6px)}}
@@ -467,3 +467,28 @@ input[type=text]{font:inherit;background:#efe0bc;color:var(--ink);border:1px sol
 .pick button{display:flex;align-items:center;gap:8px;background:#241a11;color:var(--bone);border:1px solid #5a4630;border-radius:3px;padding:8px;text-align:left}
 .pick button.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
 @media (prefers-reduced-motion:no-preference){.hero,.foe{transition:box-shadow .2s,border-color .2s,opacity .3s}}
+
+/* Build 117: modifiers added to the dice one at a time, the screen dimmed behind them */
+#dicedim{position:fixed;inset:0;z-index:150;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(ellipse at 50% 40%,rgba(10,6,2,.34),rgba(10,6,2,.62))}
+#dicedim.on{opacity:1}
+.fx-die.settled b.bump{animation:diebump .34s ease-out}
+@keyframes diebump{0%{transform:scale(1)}40%{transform:scale(1.5);color:#fff3c0}100%{transform:scale(1)}}
+.fx-die .dmod{position:absolute;left:50%;top:100%;z-index:2;display:flex;align-items:center;gap:5px;padding:3px 9px 3px 4px;border-radius:14px;background:rgba(22,13,6,.92);border:1px solid #c9a046;
+  color:#ffe6b0;font:800 .98rem var(--label);white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.6);opacity:0;transform:translate(-50%,10px) scale(.6);animation:modin .24s ease-out forwards}
+.fx-die .dmod em{font-style:normal}
+.fx-die .dmod.neg{border-color:#c0503a;color:#ffb8a8}
+.fx-die .dmod.in{animation:modfly .24s ease-in forwards}
+@keyframes modin{to{opacity:1;transform:translate(-50%,5px) scale(1)}}
+@keyframes modfly{from{opacity:1;transform:translate(-50%,5px) scale(1)}to{opacity:0;transform:translate(-50%,calc(var(--sz,50px) * -.75)) scale(.35)}}
+.dmi{display:inline-flex;width:22px;height:22px;flex:none;image-rendering:pixelated;border-radius:3px}
+.dmi svg{position:static !important;width:22px !important;height:22px !important}
+.dmi.mon{object-fit:cover;border:1px solid #6a4a22}
+.fx-die i s{text-decoration:none;margin-left:4px;font-weight:800}
+.fx-die i s.yes{color:#9fe08a}.fx-die i s.no{color:#ff8a70}
+/* Build 117: XP bars fill after a win; a level up flashes the bar and wraps the card in gold */
+.fx-xpgain{transform:translate(-50%,-100%);font:800 .8rem var(--label);color:#ffd77a;text-shadow:0 1px 0 #000,0 0 6px #000;white-space:nowrap;animation:xpgain 1.8s ease-out forwards}
+@keyframes xpgain{0%{opacity:0;margin-top:6px}15%{opacity:1;margin-top:0}75%{opacity:1}100%{opacity:0;margin-top:-14px}}
+.bar2.xp.flash i{animation:xpflash .7s ease-out 2}
+@keyframes xpflash{0%,100%{filter:none}40%{filter:brightness(2.4) saturate(1.4);box-shadow:0 0 10px #ffd77a}}
+.hero.lvlup{position:relative;box-shadow:0 0 0 2px #e0b040,0 0 18px 4px rgba(255,200,80,.75);animation:lvlaura 1.6s ease-in-out infinite}
+@keyframes lvlaura{50%{box-shadow:0 0 0 2px #ffd77a,0 0 30px 9px rgba(255,210,90,.9)}}

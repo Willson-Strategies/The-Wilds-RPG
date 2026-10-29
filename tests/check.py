@@ -84,6 +84,21 @@ async def main():
           Math.random = real; S.battle = null; return {n, bad}; })()""")
         check('to-hit rule matches the Doc', r['bad'] == 0, f"{r['n']} forced attacks, {r['bad']} wrong")
 
+        # Build 117: the modifiers added to each die must add up to the real to-hit total and the damage dealt
+        r = await pg.evaluate("""(() => {
+          S.loc = 'wild'; startBattle(false, {foes: [DATA.monsters[0].name], direct: true});
+          const h = S.party[0]; h.equip.melee = newItem('Sword'); h.st.STR = 16; h.st.DEX = 16;
+          const f = makeFoe(DATA.monsters[0], 0); f.hp = f.max = 9999; f.ac = 2; S.battle.foes = [f];
+          const last = d => d.mods && d.mods.length ? d.mods[d.mods.length - 1].to : d.val;
+          let n = 0, bad = 0;
+          for (let k = 0; k < 60; k++) {
+            FXQ = []; const hp0 = f.hp; heroAttack(h, f, false); const dice = FXQ.filter(e => e.k === 'dice'); FXQ = [];
+            dice.filter(d => !d.dmg).forEach(d => { n++; if (d.val !== 1 && last(d) !== d.val + weaponHit(h, h.equip.melee)) bad++; });
+            const dd = dice.filter(d => d.dmg); if (dd.length && dd.reduce((a, d) => a + last(d), 0) !== hp0 - f.hp) bad++;
+          }
+          S.battle = null; return {n, bad}; })()""")
+        check('dice modifiers add up to the real totals', r['bad'] == 0 and r['n'] > 0, f"{r['n']} rolls, {r['bad']} wrong")
+
         # Encounter mix: strays from deeper areas at 2% and 5%
         r = await pg.evaluate("""(() => { const reg = REGIONS[0], N = 40000; let up1 = 0, up2 = 0, bad = 0;
           for (let i = 0; i < N; i++) { const f = pickMonsters(reg);

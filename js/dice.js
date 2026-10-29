@@ -7,6 +7,7 @@ const DIE_SHAPE = {
   8: ['M50 3 95 50 50 97 5 50Z', 'M5 50h90M50 3 30 50 50 97 70 50Z'],
   10: ['M50 3 93 40 50 97 7 40Z', 'M50 3 32 52 50 64 68 52ZM7 40l25 12M93 40 68 52M50 64v33'],
   12: ['M50 3 95 36 78 93H22L5 36Z', 'M50 20 72 38 64 66H36L28 38ZM50 3v17M95 36 72 38M78 93 64 66M22 93l14-27M5 36l23 2'],
+  tok: ['M50 6a44 44 0 1 0 .1 0Z', 'M50 20a30 30 0 1 0 .1 0Z'],   // a round damage token for weapons with no damage dice (Build 117)
   20: ['M50 3 92 27v46L50 97 8 73V27Z', 'M50 20 76 64H24ZM50 3v17M92 27 76 64M92 73 76 64M50 97 76 64M50 97 24 64M8 73l16-9M8 27l16 37M92 27 50 20 8 27'],
 };
 /* Dice colours, after real tabletop sets but darkened to suit the game: a to-hit d20 per class, and a damage die per
@@ -38,23 +39,25 @@ function dieSVG(sides, sparkle) {
 }
 function diceFx(e) {
   const win = e.side === 'm' ? document.querySelector(`.foe[data-foe="${e.i}"] .win`) : document.querySelector(`.hero[data-hero="${e.i}"] .pwrap`);
-  if (!win || !e.sides) return;
-  const foe = e.side === 'm', size = foe ? 46 : 36, step = size + (foe ? 8 : 6);
+  if (!win || (!e.sides && !e.token)) return;
+  const foe = e.side === 'm', size = foe ? 58 : 46, step = size + (foe ? 8 : 6);   // bigger dice (Build 117)
   // Foes: top-left of the monster's window. Heroes: the empty right-hand end of the hero's card, beside the name.
   const r = (foe ? win : win.closest('.hero') || win).getBoundingClientRect();
   const x = foe ? r.left + scrollX + 8 + e.slot * step : r.right + scrollX - 14 - size - (1 - e.slot) * step;
   const y = foe ? r.top + scrollY + 8 : r.top + scrollY + 14;
   const cls = 'fx-die' + (e.dmg ? ' dmg' : '') + (e.crit ? ' crit' : '') + (e.fumble ? ' fumble' : '') + (e.miss ? ' missed' : '') + (foe ? '' : ' small') + (e.alt ? ' alt' : '');
-  const cap = e.cap || '';
-  const hold = Math.round((e.hold ?? 1300) * 1.2), life = e.tumble + hold;   // dice stay on screen 20% longer before fading (Build 97)
+  const cap = e.cap || '', post = e.post || 0;
+  const hold = Math.round((e.hold ?? 1300) * 1.2), life = e.tumble + post + hold;   // dice stay on screen 20% longer before fading (Build 97)
   const el = document.createElement('div'); el.className = cls;
   const pal = e.pal || 'monster';
-  el.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;--out:${life}ms;${dieVars(pal, e.dmg)}`;
-  el.innerHTML = `${dieSVG(e.sides, (DIE_PAL[pal] || {}).sparkle)}<b>${R(e.sides)}</b>${cap ? `<i>${cap}</i>` : ''}${e.label ? `<u>${e.label}</u>` : ''}`;
+  el.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;--sz:${size}px;--out:${life}ms;${dieVars(pal, e.dmg)}`;
+  el.innerHTML = `${dieSVG(e.token ? 'tok' : e.sides, (DIE_PAL[pal] || {}).sparkle)}<b>${e.token ? '' : R(e.sides)}</b>${cap ? `<i>${cap}</i>` : ''}${e.label ? `<u>${e.label}</u>` : ''}`;
   fxLayer().appendChild(el); setTimeout(() => el.remove(), life + 450);
   const num = el.querySelector('b');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce || e.tumble <= 0) { num.textContent = e.val; el.classList.add('settled'); return; }
+  dimFor(e.tumble + post);
+  if (reduce || e.tumble <= 0) { num.textContent = e.mods && e.mods.length ? e.mods[e.mods.length - 1].to : e.val; el.classList.add('settled', 'judged'); return; }
+  if (e.token) { el.animate([{transform: 'scale(.4)', opacity: 0}, {transform: 'scale(1.08)', opacity: 1, offset: .7}, {transform: 'none'}], {duration: e.tumble, easing: 'ease-out', fill: 'backwards'}); setTimeout(() => { el.classList.add('settled'); runMods(el, e); }, e.tumble); return; }
   diceSound(e.tumble, !foe);
   // Every throw is different: where it comes from, how far it spins, how it bounces before settling.
   const side = Math.random() < .5 ? -1 : 1, sx = side * (10 + Math.random() * 24), sy = -(12 + Math.random() * 22);
@@ -71,10 +74,50 @@ function diceFx(e) {
   const t0 = performance.now();
   const flick = () => {
     const k = (performance.now() - t0) / e.tumble;
-    if (k >= 1) { num.textContent = e.val; el.classList.add('settled'); return; }
+    if (k >= 1) { num.textContent = e.val; el.classList.add('settled'); runMods(el, e); return; }
     num.textContent = R(e.sides); setTimeout(flick, 40 + k * k * 110 + Math.random() * 20);
   };
   flick();
+}
+/* Build 117 (Tom's feedback): after a die settles, each modifier appears under it with its source (weapon, stat or
+   monster) and value, flies up into the die and the number on its face counts up to the new total. A to-hit die then
+   shows the AC it had to reach and whether it hit. e.mods = [{ico, txt, to, neg}], worked out by the battle engine. */
+function runMods(el, e) {
+  const num = el.querySelector('b'), mods = e.mods || [];
+  mods.forEach((m, k) => setTimeout(() => {
+    if (!el.isConnected) return;
+    const c = document.createElement('span'); c.className = 'dmod' + (m.neg ? ' neg' : ''); c.innerHTML = `${m.ico || ''}<em>${m.txt}</em>`;
+    el.appendChild(c);
+    setTimeout(() => c.classList.add('in'), MOD_STEP * .62);
+    setTimeout(() => { c.remove(); num.textContent = m.to; num.classList.remove('bump'); void num.offsetWidth; num.classList.add('bump'); modSound(m.neg); }, MOD_STEP * .62 + 230);
+  }, MOD_PAUSE + k * MOD_STEP));
+  setTimeout(() => el.isConnected && el.classList.add('judged'), MOD_PAUSE + mods.length * MOD_STEP);
+}
+/* Darkens the screen behind the dice while they roll and add up, so they stand out. */
+let DIM_END = 0, DIM_T = null;
+function dimFor(ms) {
+  let d = document.getElementById('dicedim');
+  if (!d) { d = document.createElement('div'); d.id = 'dicedim'; document.body.appendChild(d); }
+  DIM_END = Math.max(DIM_END, Date.now() + ms); d.classList.add('on'); clearTimeout(DIM_T);
+  const off = () => { const left = DIM_END - Date.now(); if (left > 0) DIM_T = setTimeout(off, left + 250); else d.classList.remove('on'); };
+  DIM_T = setTimeout(off, ms + 250);
+}
+function modSound(neg) {
+  if (!AC || AC.state !== 'running') return;
+  const t = AC.currentTime + .005, o = AC.createOscillator(), g = AC.createGain(), f = neg ? 520 : 760;
+  o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(neg ? f * .7 : f * 1.5, t + .09);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.13, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .2);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + .22);
+}
+/* Modifier chips for a die: pairs of [icon, value, multiplier?] in order, skipping zeros, with the running total. */
+const modIco = {stat: k => `<span class="dmi">${STAT_SVG[k]}</span>`, item: (n, st) => img(n, st || 0, 'dmi'), mon: f => MONS[f.name] ? `<img class="dmi mon" alt="" src="${MONS[f.name]}">` : '', shield: () => `<span class="dmi">${SHIELD_SVG}</span>`};
+function modList(start, parts) {
+  let v = start; const out = [];
+  parts.forEach(([ico, n, mult, word]) => {
+    if (mult) { if (mult === 1) return; v = Math.floor(v * mult); out.push({ico, txt: (word ? word + ' ' : '') + '×' + mult, to: v}); return; }
+    if (!n) return; v += n; out.push({ico, txt: (word ? word + ' ' : '') + signed(n), to: v, neg: n < 0});
+  });
+  return out;
 }
 /* A dice rattle made on the fly (no audio file): a run of small clacks that spread out as the die slows, then a
    heavier knock as it settles. Count, spacing and pitch change every throw. */
@@ -122,18 +165,21 @@ function dieFx(u, o) {
 /* Attack dice run in order: the d20 tumbles, and only a damaging hit then rolls the damage die. The attacker
    lunges once the last die has landed, and the blow lands CHARGE later. Times are ms from the start of the action. */
 const DIE_GAP = 150;
-const dieTime = () => Math.round(340 + Math.random() * 110);   // about 20% slower than the first dice, and never quite the same
+const dieTime = () => Math.round(560 + Math.random() * 160);   // slower and more deliberate (Build 117), and never quite the same
+const MOD_PAUSE = 320, MOD_STEP = 700, VERDICT = 600, TOKEN_T = 320;
+const modsTime = (n, verdict) => MOD_PAUSE + n * MOD_STEP + (verdict ? VERDICT : 220);
 let DICE_SHIFT = 0, SWING_CHARGE_AT = 0, SWING_IMPACT = 0;
-function diceTimeline(start, withDamage, charge) {
-  const t20 = dieTime(), s20 = start + t20, dStart = s20 + DIE_GAP, tD = withDamage ? dieTime() : 0;
-  const settled = withDamage ? dStart + tD : s20;
+function diceTimeline(start, withDamage, charge, hitMods = 0, dmgMods = 0) {
+  const t20 = dieTime(), p20 = modsTime(hitMods, true), s20 = start + t20 + p20, dStart = s20 + DIE_GAP;
+  const tD = withDamage === 'token' ? TOKEN_T : withDamage ? dieTime() : 0, pD = withDamage ? modsTime(dmgMods, false) : 0;
+  const settled = withDamage ? dStart + tD + pD : s20;
   const impact = settled + 140 + (charge ? CHARGE : 80);
-  return {t20, tD, dStart, impact, chargeAt: impact - CHARGE};
+  return {t20, p20, tD, pD, dStart, impact, chargeAt: impact - CHARGE};
 }
 function dieAt(u, o, start, tumble, impact) {
   const L = FX_LEAD; FX_LEAD = start;
-  fx(Object.assign({k: 'dice', u, tumble, hold: Math.max(900, impact - start - tumble + 950)}, o)); FX_LEAD = L;
+  fx(Object.assign({k: 'dice', u, tumble, hold: Math.max(700, impact - start - tumble - (o.post || 0) + 450)}, o)); FX_LEAD = L;
 }
 /* The caption under a to-hit d20: the total after bonuses and the AC it has to reach, e.g. "+3 = 6 vs (shield) 9". */
-const hitCap = (nat, bonus, ac) => `${bonus ? `${signed(bonus)} = ${nat + bonus} ` : ''}vs ${SHIELD_SVG}${ac}`;
+const hitCap = (nat, total, ac, hit, keen) => `${nat === 20 ? 'Natural 20 · ' : nat === 1 ? 'Natural 1 · ' : keen && total < ac ? 'Keen strike · ' : ''}vs ${SHIELD_SVG}${ac} <s class="${hit ? 'yes' : 'no'}">${hit ? 'HIT' : 'MISS'}</s>`;
 const signed = n => n ? (n > 0 ? '+' + n : '−' + Math.abs(n)) : '';
