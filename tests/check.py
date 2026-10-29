@@ -147,6 +147,25 @@ async def main():
         check('a monster killed by a Double Strike greys out only after the dice add up', G['early'] == 0 and G['dead'], f"{G['early']} early moments")
         await pg.evaluate("S.battle = null")
 
+        # Build 118: a damage spell's cry and cast sound come after its dice have landed, never while they roll
+        for sp in ['Magic Missile', 'Fireball', 'Lightning Bolt']:
+            await pg.evaluate("""(sp) => { S.loc = 'wild'; S.party.forEach(h => { h.dead = false; h.hp = h.max; h.status = {}; });
+              startBattle(false, {foes: [DATA.monsters[0].name, DATA.monsters[0].name], direct: true}); delete S.battle.phase;
+              S.battle.foes.forEach(f => { f.hp = f.max = 9999; });
+              const h = S.party[0]; window.SPC = {cls: h.cls, book: h.book, used: h.used}; h.cls = 'Magic User'; h.book = [sp]; h.used = {};
+              S.battle.cur = {side: 'p', i: 0}; S.battle.queue = [];
+              window.SP = {t0: performance.now(), cry: [], sfx: [], dice: 0};
+              const g = grunt, p = playSfx, d = diceFx; window.SPR = {g, p, d};
+              grunt = u => { SP.cry.push(performance.now() - SP.t0); };
+              playSfx = (n, ...a) => { if (/missile|fireball_cast|lightning/.test(n)) SP.sfx.push(performance.now() - SP.t0); return p(n, ...a); };
+              diceFx = e => { SP.dice = Math.max(SP.dice, performance.now() - SP.t0 + (e.tumble || 0)); return d(e); };
+              castSpell(h, 0, S.battle.foes[0]); render(); }""", sp)
+            await pg.wait_for_timeout(4000)
+            C = await pg.evaluate("""(() => { grunt = SPR.g; playSfx = SPR.p; diceFx = SPR.d; Object.assign(S.party[0], SPC); S.battle = null; return SP; })()""")
+            first = min(C['cry'] + C['sfx']) if C['cry'] + C['sfx'] else -1
+            check(f'{sp}: the cry and cast sound wait for the dice', C['dice'] > 0 and len(C['cry']) == 1 and first >= C['dice'],
+                  f"dice landed {C['dice']:.0f} ms, cry {C['cry']}, sound {C['sfx']}")
+
         check('no script errors', not errs, '; '.join(errs[:3]))
         real_missing = [u for u in missing if 'fonts.g' not in u]
         check('no missing files', not real_missing, ', '.join(real_missing[:3]))

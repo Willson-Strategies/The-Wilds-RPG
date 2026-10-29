@@ -216,7 +216,8 @@ function castSpell(h, slot, target) {
   const sp = h.book[slot], s = SPELLS[sp], B = S.battle;
   h.used[slot] = s.lvl >= 2 ? 2 : 1;
   if (s.lvl >= 2) { h.spentL2 = h.spentL2 || []; h.spentL2.push(sp); }
-  if (h.cls === 'Magic User' || h.cls === 'Cleric') grunt(h);   // a cry of effort as the spell is loosed
+  const cries = h.cls === 'Magic User' || h.cls === 'Cleric';
+  if (cries && SPELLS[sp].kind !== 'dmg') grunt(h);   // a cry of effort as the spell is loosed (damage spells cry later, below)
   addLog(`<span class="sys">${esc(h.name)} casts ${sp}.</span>`);
   if (s.kind === 'dmg') {
     if (s.splash && (!target || target.dead)) target = B.foes.find(f => !f.dead);
@@ -226,6 +227,8 @@ function castSpell(h, slot, target) {
     const PRE = 720 + modsTime(2, false) + 150; DICE_SHIFT = Math.max(DICE_SHIFT, PRE + CHARGE);
     const proj = sp === 'Magic Missile' || sp === 'Advanced Magic Missile' ? 'missile' : s.splash ? 'fireball' : sp === 'Lightning Bolt' ? 'bolt' : s.undead ? 'skull' : null;
     if (s.undead) setTimeout(() => playSfx('undead_ward', .9), PRE);
+    // The caster's cry waits for the dice too, and comes just as the spell leaves their hands, not while the dice roll (Build 118).
+    if (cries) setTimeout(() => grunt(h), PRE + (proj === 'fireball' ? FB_LAUNCH - 140 : 0));
     if (proj && targets[0]) { FX_LEAD = PRE; fx({k: proj, u: targets[0], from: h, volley: sp === 'Advanced Magic Missile' ? 5 : 1, chain: targets, abyss: sp === 'Undead Abyss'}); }
     targets.forEach((f, n) => {
       FX_LEAD = PRE + (proj === 'missile' ? MM_HIT + (sp === 'Advanced Magic Missile' ? 4 * 70 : 0) : proj === 'fireball' ? FB_HIT + n * FB_SPREAD : proj === 'bolt' ? BOLT_HIT + n * BOLT_STEP : proj === 'skull' ? SKULL_HIT : 0);
