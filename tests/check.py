@@ -26,8 +26,9 @@ def serve():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
 
-async def new_quest(pg):
-    await pg.click('[data-q-new]'); await pg.wait_for_timeout(200)
+async def new_quest(pg):   # since Build 119 a new quest opens on the prologue, then Raise Your Party
+    await pg.click('[data-q-new]'); await pg.wait_for_timeout(300)
+    await pg.click('#proSkip'); await pg.click('#proSkip'); await pg.wait_for_timeout(300)
     await pg.click('#begin'); await pg.wait_for_timeout(300)
 
 async def main():
@@ -44,8 +45,59 @@ async def main():
         title = await pg.text_content('header.bar')
         check('title screen loads and shows the build', bool(build) and f'Build {build}' in title, f'Build {build}')
 
+        # Build 119: the prologue. A new quest opens on the storm scene (no party screen first) with Odran, Rhovik,
+        # Veyra and Borska at level 5; the courtyard swaps two for the Elf and Cleric; then Raise Your Party at level 1. Its monsters never roam.
+        await pg.click('[data-q-new]'); await pg.wait_for_timeout(400)
+        P = await pg.evaluate("({scene: !!document.querySelector('.pro-stage svg'), party: S.party.map(h => h.name + ':' + h.cls + ':' + h.level).join(), stage: S.prologue && S.prologue.stage})")
+        check('a new quest opens on the prologue with the four guards at level 5', P['scene'] and P['stage'] == 0 and P['party'] == 'Odran:Fighter:5,Rhovik:Thief:5,Veyra:Magic User:5,Borska:Dwarf:5', str(P))
+        for _ in range(3):
+            await pg.click('#evSkip'); await pg.click('#proNext'); await pg.wait_for_timeout(1200)
+        enc = await pg.evaluate("S.battle && S.battle.phase === 'encounter' && !!document.querySelector('.enc-art img') && !document.querySelector('#eFlee')")
+        check('the prologue fights open on the Monsters approach panel, no fleeing', enc)
+        await pg.click('#eFight'); await pg.wait_for_timeout(1300)
+        B = await pg.evaluate("S.battle ? S.battle.foes.map(f => f.name).join() + (S.battle.noFlee ? ' noflee' : '') + (S.battle.phase ? ' ' + S.battle.phase : '') : ''")
+        check('the gate battle is 3 Goblins and an Orc, no fleeing', B == 'Goblin,Goblin,Goblin,Orc noflee', B)
+        # the dice show and sound in the prologue battle
+        D = await pg.evaluate("""(async () => { S.prologue.noTips = true; const B = S.battle; const i = S.party.findIndex(h => h.equip.melee);
+          B.cur = {side: 'p', i}; B.queue = []; INPUT_LOCK = 0; let snd = 0; const ds = diceSound; diceSound = (...x) => { snd++; return ds(...x); };
+          heroAttack(S.party[i], B.foes[0], false); render(); let seen = 0;
+          for (let k = 0; k < 20; k++) { await new Promise(r => setTimeout(r, 150)); seen = Math.max(seen, document.querySelectorAll('.fx-die').length); }
+          diceSound = ds; return {seen, snd}; })()""")
+        check('the prologue battle shows the dice and their sounds', D['seen'] >= 1 and D['snd'] >= 1, str(D))
+        async def win():
+            await pg.evaluate("S.battle.foes.forEach(f => { f.hp = 0; f.dead = true; }); checkEnd();")
+            for _ in range(40):
+                if await pg.locator('.modal [data-close]').count() or await pg.locator('#evScroll').count(): break
+                await pg.wait_for_timeout(250)
+            if await pg.locator('.modal [data-close]').count(): await pg.click('.modal [data-close]'); await pg.wait_for_timeout(400)
+        await pg.evaluate("S.party[0].hp = 2; S.party[2].hp = 0; S.party[2].dead = true; S.party[2].used = S.party[2].used.map(() => 1);")
+        await win()
+        full = await pg.evaluate("S.party.every(h => !h.dead && h.hp === h.max && h.used.every(u => !u))")
+        check('between the two fights everyone is revived with full HP and spells', full)
+        # the courtyard: pick two to stay; Ithrel and Brother Hale take their places against the Giant Orc
+        await pg.click('#evSkip'); await pg.wait_for_timeout(200)
+        dis = await pg.evaluate("$('#proNext').disabled")
+        await pg.click('[data-pick="1"]'); await pg.click('[data-pick="3"]'); await pg.click('#proNext'); await pg.wait_for_timeout(1300)
+        await pg.click('#eFight'); await pg.wait_for_timeout(1300)
+        Y = await pg.evaluate("({party: S.party.map(h => h.name + ':' + h.level).join(), foes: S.battle && S.battle.foes.map(f => f.name).join()})")
+        check('two picked heroes are swapped for Ithrel and Brother Hale against the Giant Orc', dis and Y['party'] == 'Odran:5,Ithrel:5,Veyra:5,Brother Hale:5' and Y['foes'] == 'Giant Orc', str(Y))
+        keep = await pg.evaluate("JSON.stringify(S.party.map(h => JSON.parse(S.prologue.l1[h.id])).map(h => [h.name, h.cls, h.st, h.max]))")
+        old = await pg.evaluate("(() => { const f = S.battle.foes[0]; f.max = f.hp = 65; f.dmg = '2D6+4'; S.party[0].hp = 1; go(); const g = S.battle.foes[0]; return [g.max, g.dmg, S.party[0].hp === S.party[0].max]; })()")
+        check('a saved courtyard fight with the old Giant Orc restarts with the new one', old == [40, '2D6+2', True], str(old))
+        await pg.wait_for_timeout(300)
+        if await pg.locator('#eFight').count(): await pg.click('#eFight'); await pg.wait_for_timeout(1300)
+        await win()
+        sink = await pg.evaluate("S.prologue && S.prologue.stage === 4 && !!document.querySelector('.pro-sinking')")
+        check('the prologue ends with the castle sinking into the earth', sink)
+        await pg.click('#evSkip'); await pg.click('#proNext'); await pg.wait_for_timeout(400)
+        back = await pg.evaluate("JSON.stringify(draft.map(h => [h.name, h.cls, h.st, h.max]))")
+        check('after the prologue, Raise Your Party starts from the final four at level 1', back == keep and await pg.evaluate("!!document.querySelector('#begin') && draft.every(h => h.level === 1)"))
+        await pg.click('#begin'); await pg.wait_for_timeout(300)
+        r = await pg.evaluate("(() => { let bad = 0; for (const reg of REGIONS) for (let i = 0; i < 3000; i++) if (pickMonsters(reg).some(m => SCRIPTED.includes(m.name))) bad++; return bad; })()")
+        check('prologue monsters never appear in the wilds', r == 0, f'{r} encounters')
+        await pg.evaluate("save(); leaveQuest(); screenTitle();"); await pg.wait_for_timeout(200)
         await new_quest(pg)
-        check('a new quest starts at the castle', await pg.evaluate("S && S.loc === 'castle'"))
+        check('a new quest starts at the castle', await pg.evaluate("S && S.loc === 'castle' && !S.prologue"))
 
         # every picture the game refers to must load
         bad = await pg.evaluate("""(async () => { const all = [...Object.values(ICON).flat(), ...Object.values(HEADS), ...Object.values(FULL), ...Object.values(MONS), ...CAMP];

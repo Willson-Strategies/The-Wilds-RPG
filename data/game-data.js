@@ -813,6 +813,48 @@ const DATA = {
    "attacks": 1,
    "special": "Swing: before each attack roll a D8; on 7-8 he swings instead, dealing D3 to every character (flat 55% chance to hit each, regardless of AC). Fury: +1 damage below half HP. Immune to Sleep and Entangle.",
    "boss": true
+  },
+  {
+   "lvl": 4,
+   "name": "Goblin",
+   "type": "Humanoid",
+   "hp": 14,
+   "ac": 11,
+   "hit": 4,
+   "hitMissing": false,
+   "dmg": "D6+2",
+   "dmgAvg": 5.5,
+   "attacks": 1,
+   "special": "Prologue only: scales the castle walls in the opening battle.",
+   "boss": false
+  },
+  {
+   "lvl": 4,
+   "name": "Orc",
+   "type": "Humanoid",
+   "hp": 34,
+   "ac": 12,
+   "hit": 5,
+   "hitMissing": false,
+   "dmg": "D8+3",
+   "dmgAvg": 7.5,
+   "attacks": 1,
+   "special": "Prologue only: the hulking orc at the castle gate in the opening battle.",
+   "boss": false
+  },
+  {
+   "lvl": 5,
+   "name": "Giant Orc",
+   "type": "Giant",
+   "hp": 40,
+   "ac": 12,
+   "hit": 5,
+   "hitMissing": false,
+   "dmg": "2D6+2",
+   "dmgAvg": 9.0,
+   "attacks": 1,
+   "special": "Sweep: its attack hits two adjacent characters. Prologue only: the courtyard battle.",
+   "boss": false
   }
  ],
  "drops": {

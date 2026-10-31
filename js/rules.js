@@ -76,3 +76,5 @@ const REGIONS = [
   {id:'spine', name:"The Dragon's Spine", lvl:10, kind:'cave', blurb:'Lairs of dragons, hags and worse.'},
 ];
 const BOSSES = ['Orc War Chief', 'Lich', 'Beastman Warlord'];
+// Monsters met only in the prologue's battle: never in wild encounters.
+const SCRIPTED = ['Goblin', 'Orc', 'Giant Orc'];

@@ -494,3 +494,66 @@ input[type=text]{font:inherit;background:#efe0bc;color:var(--ink);border:1px sol
 @keyframes lvlaura{50%{box-shadow:0 0 0 2px #ffd77a,0 0 30px 9px rgba(255,210,90,.9)}}
 .fx-die.judged:not(.missed):not(.crit){filter:drop-shadow(0 0 9px rgba(255,214,110,1)) drop-shadow(0 0 22px rgba(255,180,60,.75)) drop-shadow(0 3px 3px rgba(0,0,0,.7));transition:filter .25s}   /* every hit glows gold (Build 117) */
 .fx-die.crit.judged{filter:drop-shadow(0 0 9px #ffb347) drop-shadow(0 0 20px rgba(255,120,40,.7)) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
+/* ---- prologue (Build 119): storm scenes and tutorial windows ---- */
+.pro{max-width:980px;margin:0 auto}
+.pro-stage{position:relative;aspect-ratio:16/9;overflow:hidden;border:2px solid #2a1d10;border-radius:3px;background:#05060a;box-shadow:inset 0 0 40px rgba(0,0,0,.8),0 6px 20px rgba(30,15,5,.45);margin-bottom:14px}
+.pro-svg{position:absolute;inset:0;width:100%;height:100%;display:block;transition:filter .08s}
+.pro-stage.lit .pro-svg{filter:brightness(2.6) contrast(1.15) saturate(.6)}
+.pro-rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pro-flash{position:absolute;inset:0;pointer-events:none;background:#dfe8ff;opacity:0;mix-blend-mode:screen}
+.pro-flash.go{animation:proflash .9s ease-out}
+@keyframes proflash{0%{opacity:.85}8%{opacity:.1}16%{opacity:.6}40%{opacity:.05}100%{opacity:0}}
+.pro-flash-page{position:fixed;z-index:4}
+#proRainOver{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:4}
+.pro-clouds{animation:prodrift 40s linear infinite alternate}
+@keyframes prodrift{to{transform:translateX(-60px)}}
+.pro-win{animation:prowin 3s steps(1) infinite}.pro-win:nth-of-type(3n){animation-delay:-1.3s}.pro-win:nth-of-type(2n){animation-duration:4.2s}
+@keyframes prowin{0%,100%{opacity:1}47%{opacity:.55}52%{opacity:1}80%{opacity:.8}}
+.pro-flag{transform-box:fill-box;transform-origin:0 50%;animation:proflag .5s ease-in-out infinite alternate}
+@keyframes proflag{to{transform:scaleX(.7) skewY(-8deg)}}
+.pro-cloak{transform-box:fill-box;transform-origin:100% 0;animation:proflag .7s ease-in-out infinite alternate}
+.pro-rear>g{transform-box:fill-box;transform-origin:20% 100%;animation:prorear 2.6s ease-in-out infinite}
+@keyframes prorear{0%,100%{transform:rotate(0)}40%,60%{transform:rotate(-7deg)}}
+.pro-toss>g{transform-box:fill-box;transform-origin:50% 100%;animation:prorear 1.7s ease-in-out infinite reverse}
+.pro-torch{animation:protorch .3s ease-in-out infinite alternate}.pro-fire{transform-box:fill-box;transform-origin:50% 100%;animation:profire .18s ease-in-out infinite alternate}
+@keyframes protorch{to{opacity:.65}}@keyframes profire{to{transform:scaleY(.7) skewX(8deg)}}
+.pro-climb{animation:proclimb 7s linear infinite}.pro-climb2{animation-delay:-3.5s}
+@keyframes proclimb{from{translate:0 40px}to{translate:12px -120px}}
+.pro-fall{opacity:0;animation:profall 5.5s ease-in infinite 1s}.pro-fall2{animation-delay:3.2s}.pro-fall3{animation-delay:4.6s}
+@keyframes profall{0%{opacity:0;translate:0 0;rotate:0deg}4%{opacity:1}30%{opacity:1;translate:30px 360px;rotate:160deg}31%,100%{opacity:0;translate:30px 360px}}
+.pro-charge{transform-box:fill-box;transform-origin:50% 100%;animation:procharge 5s ease-in forwards 1.5s;transform:translateY(30px) scale(.55);opacity:.9}
+@keyframes procharge{from{transform:translateY(30px) scale(.55)}to{transform:translateY(0) scale(1)}}
+.pro-go .pro-charge{animation:procharge .8s ease-in forwards}
+.pro-smoke{animation:prosmoke 6s ease-in-out infinite alternate}@keyframes prosmoke{to{translate:-26px -10px;opacity:.25}}
+.pro-puddle{animation:protorch 1s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){.pro-stage *{animation:none!important}.pro-charge{transform:none}}
+.pro-tut{position:fixed;inset:0;z-index:180}
+.tut-block{position:fixed;inset:0}
+.tut-ring{position:fixed;border:2px solid var(--gold,#c9a046);border-radius:6px;box-shadow:0 0 0 9999px rgba(8,5,2,.62),0 0 18px rgba(230,190,90,.7);pointer-events:none;animation:tutglow 1.4s ease-in-out infinite alternate}
+@keyframes tutglow{to{box-shadow:0 0 0 9999px rgba(8,5,2,.62),0 0 30px rgba(240,200,100,.95)}}
+.tut-card{position:fixed;z-index:2;max-height:calc(100vh - 24px);overflow:auto;padding:14px 16px!important;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.tut-card h3{margin:0 0 6px;font-family:var(--label,Cinzel,serif)}.tut-card p{margin:0 0 8px}
+.tut-eg{background:rgba(120,80,30,.12);border-left:3px solid #8a6a3a;padding:6px 9px}
+.tut-list{margin:0 0 8px;padding-left:4px;list-style:none;display:grid;gap:6px}.tut-list li{position:relative;padding-left:30px;min-height:22px}.tut-list li>.tut-ico:first-child{position:absolute;left:0;top:1px}
+.tut-ico{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;background:#241a11;border:1px solid #5a4630;border-radius:4px;line-height:0}.tut-ico svg,.tut-ico img{width:16px;height:16px}
+.tut-roll{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;vertical-align:middle;margin:0 2px}
+.tut-face{font:800 .95rem var(--label);background:#2a1a0e;color:#f0dcb0;border-radius:4px;padding:1px 7px}
+.tut-mod{display:inline-flex;align-items:center;gap:3px;padding:1px 7px 1px 3px;border-radius:12px;background:rgba(22,13,6,.92);border:1px solid #c9a046;color:#ffe6b0}.tut-mod b{font:700 .8rem var(--label)}.tut-mod .dmi,.tut-mod svg,.tut-mod img{width:15px;height:15px}
+.tut-eq{font:800 .95rem var(--label)}
+.pro-thrust{animation:prothrust 1.4s ease-in-out infinite}@keyframes prothrust{0%,60%,100%{translate:0 0}75%{translate:14px -3px}}
+.pro-club{transform-box:view-box;transform-origin:32px -82px;animation:proclub 2.2s ease-in-out infinite}@keyframes proclub{0%,100%{rotate:0deg}55%{rotate:-18deg}70%{rotate:62deg}80%{rotate:58deg}}
+.pro-holy{animation:proholy 1.6s ease-in-out infinite alternate}@keyframes proholy{from{opacity:.35}to{opacity:.9}}
+.pro-sink{animation:proshake .12s linear 1s 75}
+@keyframes proshake{0%{transform:translate(0,0)}25%{transform:translate(-3px,2px)}50%{transform:translate(2px,-2px)}75%{transform:translate(-2px,-1px)}100%{transform:translate(2px,1px)}}
+.pro-sinking{animation:prosinking 8s cubic-bezier(.5,0,.85,.4) 1.5s forwards}@keyframes prosinking{0%{translate:0 0;rotate:0deg}10%{translate:3px 6px;rotate:.4deg}100%{translate:-8px 400px;rotate:-2deg}}
+.pro-sinking{transform-box:view-box;transform-origin:480px 380px}
+.pro-dust ellipse{opacity:0;transform-box:fill-box;transform-origin:50% 100%;animation:produst 4s ease-out forwards}@keyframes produst{0%{opacity:0;scale:.4 .3}30%{opacity:.85}100%{opacity:.5;scale:1.4 2.2}}
+.pro-cracks path{stroke-dasharray:240;stroke-dashoffset:240;filter:drop-shadow(0 0 4px #ff7a20);animation:procrack 1.4s ease-out forwards}@keyframes procrack{to{stroke-dashoffset:0}}
+.pro-rubble{opacity:0;animation:prorubble 1.6s ease-in forwards}@keyframes prorubble{0%{opacity:1;translate:0 0;rotate:0deg}100%{opacity:1;translate:10px 90px;rotate:200deg}}
+.pro-picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:8px}
+.pro-pick{display:grid;grid-template-columns:44px 1fr;gap:2px 10px;align-items:center;text-align:left;padding:8px 10px;background:linear-gradient(#211a14,#16110d);color:var(--bone);border:1px solid #3a2c1e;border-radius:3px}
+.pro-pick img{width:44px;height:44px;border-radius:3px;grid-row:span 2;object-fit:cover}.pro-pick b{display:block;font-family:var(--label);font-size:.85rem}.pro-pick i{font-size:.8rem;color:var(--muted)}
+.pro-pick em{grid-column:2;font-style:normal;font-family:var(--label);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:#d0602a;visibility:hidden}
+.pro-pick.on{border-color:#d0602a;box-shadow:0 0 0 1px #d0602a}.pro-pick.on em{visibility:visible}.pro-pick.on img{filter:grayscale(.6)}
+.pro-picknote{margin:0 0 10px}
+@media (prefers-reduced-motion:reduce){.pro-sink{animation:none}.pro-sinking{animation-duration:.01s}}

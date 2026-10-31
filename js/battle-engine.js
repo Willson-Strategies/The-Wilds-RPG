@@ -3,7 +3,7 @@
    area turns up, always alone; otherwise 5% that one monster from the next level up appears, half the time alone and
    half the time mixed into a normal group (at least 2). Falls back to a normal encounter if no such monster exists. */
 function strayRoll(r) {
-  const at = lv => DATA.monsters.filter(m => !BOSSES.includes(m.name) && m.lvl === lv);
+  const at = lv => DATA.monsters.filter(m => !BOSSES.includes(m.name) && !SCRIPTED.includes(m.name) && m.lvl === lv);
   const d = R(100);
   if (d <= 2) return at(r.lvl + 2).length ? {up: 2, alone: true, from: at(r.lvl + 2)} : null;
   if (d <= 7 && at(r.lvl + 1).length) return {up: 1, alone: Math.random() < .5, from: at(r.lvl + 1)};
@@ -17,8 +17,8 @@ function pickMonsters(r) {
           : (k <= 2 ? 1 : k <= 5 ? 2 : k <= 8 ? 3 : k === 9 ? 4 : 5);
   if (stray) n = stray.alone ? 1 : Math.max(2, n);
   const strayAt = stray ? (stray.alone ? 0 : Math.floor(Math.random() * n)) : -1;
-  const pool = DATA.monsters.filter(m => !BOSSES.includes(m.name) && m.lvl === r.lvl);
-  const lower = DATA.monsters.filter(m => !BOSSES.includes(m.name) && m.lvl === r.lvl - 1);
+  const pool = DATA.monsters.filter(m => !BOSSES.includes(m.name) && !SCRIPTED.includes(m.name) && m.lvl === r.lvl);
+  const lower = DATA.monsters.filter(m => !BOSSES.includes(m.name) && !SCRIPTED.includes(m.name) && m.lvl === r.lvl - 1);
   const out = [];
   for (let i = 0; i < n; i++) {
     const src = i === strayAt ? stray.from : (lower.length && Math.random() < .3) ? lower : pool;
