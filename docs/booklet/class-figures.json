@@ -1,0 +1,321 @@
+{
+ "_about": "Level 10 figures for the Player Booklet's class pages, from the balance app (Base Line Balance, analyse() at level 10). 'typical' is the average hero's stats; 'radar' is the At a glance chart: value, scale (0-1, share of the best class) and band (up = Weak, warn = Fair, ok = Strong, op = Exceptional). The Magic User's Healing is set to none: she has no healing spells (the balance app counts her WIS bonus there).",
+ "Fighter": {
+  "typical": {
+   "STR": 20.9,
+   "DEX": 19.4,
+   "CON": 25,
+   "WIS": 0,
+   "INT": 0,
+   "CHA": 12,
+   "HP": 92.4
+  },
+  "radar": {
+   "hp": {
+    "value": 92.4,
+    "scale": 0.825,
+    "band": "ok"
+   },
+   "def": {
+    "value": 2.7,
+    "scale": 0.5,
+    "band": "ok"
+   },
+   "acc": {
+    "value": 6.9,
+    "scale": 1,
+    "band": "op"
+   },
+   "wpn": {
+    "value": 19.53,
+    "scale": 1,
+    "band": "op"
+   },
+   "mag": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "heal": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "aoe": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "ctl": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   }
+  }
+ },
+ "Dwarf": {
+  "typical": {
+   "STR": 19.4,
+   "DEX": 20.9,
+   "CON": 25,
+   "WIS": 0,
+   "INT": 0,
+   "CHA": 4.5,
+   "HP": 112
+  },
+  "radar": {
+   "hp": {
+    "value": 112,
+    "scale": 1,
+    "band": "op"
+   },
+   "def": {
+    "value": 2.9,
+    "scale": 0.537,
+    "band": "ok"
+   },
+   "acc": {
+    "value": 6.6,
+    "scale": 0.957,
+    "band": "op"
+   },
+   "wpn": {
+    "value": 13.92,
+    "scale": 0.712,
+    "band": "op"
+   },
+   "mag": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "heal": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "aoe": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "ctl": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   }
+  }
+ },
+ "Elf": {
+  "typical": {
+   "STR": 15.5,
+   "DEX": 15.5,
+   "CON": 25,
+   "WIS": 25,
+   "INT": 25,
+   "CHA": 11,
+   "HP": 83.4
+  },
+  "radar": {
+   "hp": {
+    "value": 83.4,
+    "scale": 0.745,
+    "band": "ok"
+   },
+   "def": {
+    "value": 1.5,
+    "scale": 0.278,
+    "band": "warn"
+   },
+   "acc": {
+    "value": 3.1,
+    "scale": 0.449,
+    "band": "warn"
+   },
+   "wpn": {
+    "value": 4.13,
+    "scale": 0.212,
+    "band": "up"
+   },
+   "mag": {
+    "value": 16.75,
+    "scale": 0.8,
+    "band": "op"
+   },
+   "heal": {
+    "value": 7.75,
+    "scale": 0.138,
+    "band": "warn"
+   },
+   "aoe": {
+    "value": 60.38,
+    "scale": 0.827,
+    "band": "op"
+   },
+   "ctl": {
+    "value": 2.25,
+    "scale": 1,
+    "band": "op"
+   }
+  }
+ },
+ "Magic User": {
+  "typical": {
+   "STR": 6.5,
+   "DEX": 11,
+   "CON": 12.5,
+   "WIS": 19,
+   "INT": 25,
+   "CHA": 12,
+   "HP": 37.6
+  },
+  "radar": {
+   "hp": {
+    "value": 37.6,
+    "scale": 0.336,
+    "band": "up"
+   },
+   "def": {
+    "value": 0.3,
+    "scale": 0.056,
+    "band": "up"
+   },
+   "acc": {
+    "value": 2.2,
+    "scale": 0.319,
+    "band": "up"
+   },
+   "wpn": {
+    "value": 0.78,
+    "scale": 0.04,
+    "band": "up"
+   },
+   "mag": {
+    "value": 20.95,
+    "scale": 1,
+    "band": "op"
+   },
+   "heal": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "aoe": {
+    "value": 72.98,
+    "scale": 1,
+    "band": "op"
+   },
+   "ctl": {
+    "value": 2.25,
+    "scale": 1,
+    "band": "op"
+   }
+  }
+ },
+ "Cleric": {
+  "typical": {
+   "STR": 16.5,
+   "DEX": 16.5,
+   "CON": 25,
+   "WIS": 25,
+   "INT": 19,
+   "CHA": 20.9,
+   "HP": 83.4
+  },
+  "radar": {
+   "hp": {
+    "value": 83.4,
+    "scale": 0.745,
+    "band": "ok"
+   },
+   "def": {
+    "value": 1.7,
+    "scale": 0.315,
+    "band": "warn"
+   },
+   "acc": {
+    "value": 3.3,
+    "scale": 0.478,
+    "band": "warn"
+   },
+   "wpn": {
+    "value": 3.41,
+    "scale": 0.175,
+    "band": "up"
+   },
+   "mag": {
+    "value": 7.7,
+    "scale": 0.368,
+    "band": "ok"
+   },
+   "heal": {
+    "value": 56,
+    "scale": 1,
+    "band": "op"
+   },
+   "aoe": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   },
+   "ctl": {
+    "value": 0,
+    "scale": 0,
+    "band": "up"
+   }
+  }
+ },
+ "Thief": {
+  "typical": {
+   "STR": 12,
+   "DEX": 25,
+   "CON": 12.5,
+   "WIS": 21.3,
+   "INT": 21.3,
+   "CHA": 25,
+   "HP": 37.6
+  },
+  "radar": {
+   "hp": {
+    "value": 37.6,
+    "scale": 0.336,
+    "band": "up"
+   },
+   "def": {
+    "value": 5.4,
+    "scale": 1,
+    "band": "op"
+   },
+   "acc": {
+    "value": 6,
+    "scale": 0.87,
+    "band": "op"
+   },
+   "wpn": {
+    "value": 3.04,
+    "scale": 0.156,
+    "band": "up"
+   },
+   "mag": {
+    "value": 8.95,
+    "scale": 0.427,
+    "band": "ok"
+   },
+   "heal": {
+    "value": 6.95,
+    "scale": 0.124,
+    "band": "up"
+   },
+   "aoe": {
+    "value": 13.45,
+    "scale": 0.184,
+    "band": "up"
+   },
+   "ctl": {
+    "value": 1.23,
+    "scale": 0.545,
+    "band": "op"
+   }
+  }
+ }
+}
