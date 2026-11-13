@@ -11,7 +11,7 @@ const PRO_HELP = [['Elf', 'Ithrel'], ['Cleric', 'Brother Hale']];
 function newQuestPrologue(n) {   // a new quest: straight into the prologue, no party screen first
   QUEST = n; DRAFT_ST = {};
   const party = PRO_PARTY.map(([c, nm]) => makeHero(c, nm));
-  S = {party, gold: startGold(party), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true};
+  S = {party, gold: startGold(party), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true, supplies: 2};   // Build 120: every new quest sets out with supplies for 2 camps
   beginPrologue(); save(); go(); window.scrollTo({top: 0});
 }
 const PRO_FOES = ['Goblin', 'Goblin', 'Goblin', 'Orc'];

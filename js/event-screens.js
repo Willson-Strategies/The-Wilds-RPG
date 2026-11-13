@@ -34,7 +34,7 @@ function screenEvent() {
     $('#evLeave').onclick = () => { done(); save(); explore(); };
   } else {
     $('#evOn').onclick = () => { done(); save(); explore(); };
-    $('#evCamp').onclick = () => { done(); S.loc = 'camp'; S.rest = null; S.party.forEach(h => Object.values(h.equip).forEach(it => it && (it.shown = wearH(it)))); save(); go(); };
+    $('#evCamp').onclick = () => { done(); enterCamp(); };
     $('#evHome').onclick = () => { done(); save(); go(); $('#home').click(); };
   }
 }

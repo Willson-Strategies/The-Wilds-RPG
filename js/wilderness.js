@@ -23,7 +23,7 @@ function screenWild() {
   </div>${roster()}</div>`;
   wireSheets();
   $('#explore').onclick = explore;
-  $('#camp').onclick = () => { S.loc = 'camp'; S.rest = null; S.party.forEach(h => Object.values(h.equip).forEach(it => it && (it.shown = wearH(it)))); save(); go(); };
+  $('#camp').onclick = () => { enterCamp(); };
   $('#home').onclick = () => {
     passTime(30);
     // After the sealed caves (lore entry 12), the Beastman Warlord blocks the way home from Bramblewood until he is beaten.

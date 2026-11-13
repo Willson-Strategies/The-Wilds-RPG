@@ -557,3 +557,5 @@ input[type=text]{font:inherit;background:#efe0bc;color:var(--ink);border:1px sol
 .pro-pick.on{border-color:#d0602a;box-shadow:0 0 0 1px #d0602a}.pro-pick.on em{visibility:visible}.pro-pick.on img{filter:grayscale(.6)}
 .pro-picknote{margin:0 0 10px}
 @media (prefers-reduced-motion:reduce){.pro-sink{animation:none}.pro-sinking{animation-duration:.01s}}
+/* Build 120: Supplies for camp line on Camp and Party & Gear */
+.supplies{margin:6px 0;padding:6px 10px;border-left:3px solid #8a5a2b;background:rgba(120,80,30,.08)}

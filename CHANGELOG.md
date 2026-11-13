@@ -3,6 +3,11 @@
 Newest first. One short entry per build: what changed for the player, and why when it matters.
 Rule changes are also made in the "RPG Base line" Google Doc. The repository history has every line-by-line change.
 
+## Build 120 · 13 Nov 2026
+- **Supplies for camp.** Resting in camp now needs supplies (resting made the game too easy). They are rolled after every won battle, separately from loot: 5% after the first win, +5% for each further win without a find (certain on the 20th), then back to 5%. Fled battles don't count. About one find every 5 wins on average.
+- New quests start with enough supplies for 2 camps. The party can carry any number. Party & Gear (and the Camp screen) shows "Enough supplies for X camps". The first rest in a camp uses one, and that fire lasts until the party breaks camp, so resting again after an ambush or waking is free. With no supplies, "Rest by the fire" is greyed out. The Inn and the Clerics are unchanged.
+- **Wounded warning.** Breaking camp, breaking off a rest or waking the party while anyone is hurt now asks first: "Stay and rest" or carry on anyway. No warning if the party has no way to rest.
+
 ## Build 119 · 29 Oct 2026
 - **A prologue opens every new quest**, before the party is raised. Drawn scenes on a stormy night at the castle, with falling rain, lightning that lights up the picture, thunder, and frightened horses in the stables. The Duke warns his elite guard that orcs are almost at the walls; at the main gate orcs and goblins are scaling the walls, some falling to their deaths, and three goblins and a hulking orc rush the party. The storm sounds are made in the browser; there is no music until the fights, and the rain drops away whenever dice are rolling.
 - **Two tutorial battles**, each opening on the usual "Monsters approach" panel with the party leader and the red slash when Fight is pressed. No fleeing.
