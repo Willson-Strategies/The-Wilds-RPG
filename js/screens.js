@@ -56,7 +56,7 @@ function screenCreate() {
   $('#back').onclick = () => (S && !S.raising ? go() : (save(), screenTitle()));   // after the prologue the quest waits on this screen
   $('#begin').onclick = () => {
     draft.forEach(h => Object.values(h.equip).forEach(it => { if (it && it.starter) { it.name = starterName(h.name, it.starter); regStarter(it); } }));
-    S = {party: draft, gold: startGold(draft), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true};
+    S = {party: draft, gold: startGold(draft), inv: [], clock: 8 * 60, loc: 'castle', region: 'road', visited: ['road'], nextEnc: 0, log: [], battle: null, wildHours: 0, quest: QUEST, b79: true, b80: true, supplies: 2};   // Build 120: every new quest sets out with supplies for 2 camps
     save(); go(); window.scrollTo({top: 0});
   };
 }

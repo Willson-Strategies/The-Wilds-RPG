@@ -98,6 +98,7 @@ async def main():
         await pg.evaluate("save(); leaveQuest(); screenTitle();"); await pg.wait_for_timeout(200)
         await new_quest(pg)
         check('a new quest starts at the castle', await pg.evaluate("S && S.loc === 'castle' && !S.prologue"))
+        check('a new quest starts with enough supplies for 2 camps', await pg.evaluate("S.supplies") == 2)
 
         # every picture the game refers to must load
         bad = await pg.evaluate("""(async () => { const all = [...Object.values(ICON).flat(), ...Object.values(HEADS), ...Object.values(FULL), ...Object.values(MONS), ...CAMP];
