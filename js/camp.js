@@ -1,5 +1,26 @@
 function restAll() { S.party.forEach(h => { if (h.status) { delete h.status.WARD; } }); }
 function restoreSpells() { S.party.forEach(h => { h.used = h.used.map(() => false); h.spentL2 = []; }); }
+/* Build 120: Supplies for camp. Resting needs them: the first rest in a camp uses one, and that fire lasts until the party
+   breaks camp (so an ambush or a pause doesn't cost another). Found only after won battles: 5% after the first battle,
+   +5% for each further win without a find (100% on the 20th), back to 5% after a find. Fled battles don't count. */
+const supplies = () => S.supplies || 0;
+function rollSupplies() {
+  const n = (S.supplyN || 0) + 1;
+  if (R(100) <= Math.min(100, 5 * n)) { S.supplies = supplies() + 1; S.supplyN = 0; return true; }
+  S.supplyN = n; return false;
+}
+const suppliesText = () => supplies() ? `Enough supplies for ${supplies()} camp${supplies() === 1 ? '' : 's'}` : 'No supplies for camp';
+const canRest = () => !!S.campLit || supplies() > 0;
+function enterCamp() { S.loc = 'camp'; S.rest = null; S.campLit = false; S.party.forEach(h => Object.values(h.equip).forEach(it => it && (it.shown = wearH(it)))); save(); go(); }
+// Before the party gives up a rest while anyone is wounded, check they mean it (only if a rest is possible at all).
+function warnWounded(leave, then) {
+  const hurt = S.party.filter(h => !h.dead && h.hp < h.max);
+  if (!hurt.length || !canRest()) return then();
+  const names = hurt.map(h => `<b>${esc(h.name)}</b> (${h.hp}/${h.max} HP)`), list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names.slice(-1) : names[0];
+  const el = modal(`<h2>The party is wounded</h2><p>${list} ${hurt.length === 1 ? 'is' : 'are'} still hurt. Rest by the fire until everyone is healed, or ${leave} anyway?</p>
+    <div class="row"><button class="btn red" data-close>Stay and rest</button><button class="btn" id="wwGo">${leave[0].toUpperCase() + leave.slice(1)} anyway</button></div>`);
+  el.querySelector('#wwGo').onclick = () => { el.remove(); then(); };
+}
 let restTimer = null, fireTimer = null;
 function stopTimers() { if (restTimer) clearInterval(restTimer); if (fireTimer) clearInterval(fireTimer); restTimer = fireTimer = null; }
 // Ambush chance per hour of rest. Hours 1-7 are a quarter of the old curve; the hour that completes 8 hours or 16 hours
@@ -22,8 +43,9 @@ function screenCamp() {
       ${resting ? `<div class="resting" aria-live="polite">Resting… ${R0.hours} hour${R0.hours === 1 ? '' : 's'}</div>
         <div class="risk">${R0.hours >= 16 ? 'The fire is dead. You cannot see your own hands.' : R0.hours >= 11 ? 'The embers are dying and the dark presses in.' : R0.hours >= 6 ? 'The night grows long. Something out there is watching the fire.' : R0.hours >= 3 ? 'Every hour by the fire draws more eyes from the dark.' : 'Keep your weapons close. Resting here is never safe.'}</div>`
       : R0 && R0.ask ? `<div class="resting">${R0.ask} hours have passed.</div><p>${R0.ask === 8 ? 'Level 1 spells are restored. Level 2 spells need 16 hours of rest.' : R0.ask === 16 ? 'Every spell slot is restored.' : 'The party has rested long.'} Keep resting by the fire? The dark grows more dangerous with every hour.</p>`
-      : `<p>Each hour of rest heals every living hero D3 HP (D3+1 while a Cleric in the party is alive to tend the wounds). Eight hours of rest restores level 1 spells; sixteen hours restores level 2 spells too. The longer you rest, the more likely something finds you, and an ambush always strikes first.</p>`}
-      <div class="row">${resting ? '<button class="btn red" id="stoprest">Break off the rest</button>' : R0 && R0.ask ? '<button class="btn red" id="more">Keep resting</button><button class="btn" id="wake">Wake the party</button>' : '<button class="btn red" id="rest">Rest by the fire</button><button class="btn" id="leave">Break camp</button>'}</div>
+      : `<p>Each hour of rest heals every living hero D3 HP (D3+1 while a Cleric in the party is alive to tend the wounds). Eight hours of rest restores level 1 spells; sixteen hours restores level 2 spells too. The longer you rest, the more likely something finds you, and an ambush always strikes first.</p>
+        <p class="supplies"><b>${suppliesText()}.</b> ${S.campLit ? 'The fire from your supplies is already burning here; resting costs nothing more until you break camp.' : supplies() ? 'Resting here uses one, and the fire lasts until you break camp.' : 'Without supplies the party cannot rest. They are sometimes found after a battle is won.'}</p>`}
+      <div class="row">${resting ? '<button class="btn red" id="stoprest">Break off the rest</button>' : R0 && R0.ask ? '<button class="btn red" id="more">Keep resting</button><button class="btn" id="wake">Wake the party</button>' : `<button class="btn red" id="rest" ${canRest() ? '' : 'disabled'}>Rest by the fire</button>`+'<button class="btn" id="leave">Break camp</button>'}</div>
       ${R0 && R0.log && R0.log.length ? `<div class="log">${R0.log.map(l => `<div>${l}</div>`).join('')}</div>` : ''}
     </div>
     ${resting ? '' : partyGear()}</div>${roster()}</div>`;
@@ -38,14 +60,19 @@ function screenCamp() {
     const whole = S.party.every(h => h.dead || h.hp >= h.max);
     restTimer = setInterval(restTick, whole ? 450 : 2200);
     wireSheets();
-    $('#stoprest').onclick = () => { S.rest.on = false; save(); screenCamp(); };
+    $('#stoprest').onclick = () => warnWounded('break off the rest', () => { if (!S.rest || !S.rest.on) return; S.rest.on = false; save(); screenCamp(); });
   } else if (R0 && R0.ask) {
     $('#more').onclick = () => { delete R0.ask; R0.on = true; save(); screenCamp(); };
-    $('#wake').onclick = () => { delete R0.ask; R0.log.unshift('<span class="sys">The party rises from the fire.</span>'); save(); screenCamp(); };
+    $('#wake').onclick = () => warnWounded('wake the party', () => { delete R0.ask; R0.log.unshift('<span class="sys">The party rises from the fire.</span>'); save(); screenCamp(); });
     wireGear();
   } else {
-    $('#rest').onclick = () => { S.rest = {on: true, hours: 0, log: []}; save(); screenCamp(); };
-    $('#leave').onclick = () => { stopTimers(); S.rest = null; delete S.safeRest; S.loc = 'wild'; scheduleEnc(); save(); go(); };
+    $('#rest').onclick = () => {
+      if (!canRest()) return;
+      const log = [];
+      if (!S.campLit) { S.supplies = supplies() - 1; S.campLit = true; log.push(`<span class="sys">The party unpacks its supplies and builds up the fire. ${suppliesText()} left.</span>`); }
+      S.rest = {on: true, hours: 0, log}; save(); screenCamp();
+    };
+    $('#leave').onclick = () => warnWounded('break camp', () => { stopTimers(); S.rest = null; S.campLit = false; delete S.safeRest; S.loc = 'wild'; scheduleEnc(); save(); go(); });
     wireGear();
   }
 }

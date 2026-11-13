@@ -162,7 +162,7 @@ function startScroll(instant, onDone) {
 const EV_ON = `<button class="btn red" id="evOn">Carry on</button><button class="btn" id="evCamp">Make camp</button><button class="btn" id="evHome">Return to the castle</button>`;
 function wireOnward(done) {
   $('#evOn').onclick = () => { done(); save(); explore(); };
-  $('#evCamp').onclick = () => { done(); S.loc = 'camp'; S.rest = null; S.party.forEach(h => Object.values(h.equip).forEach(it => it && (it.shown = wearH(it)))); save(); go(); };
+  $('#evCamp').onclick = () => { done(); enterCamp(); };
   $('#evHome').onclick = () => { done(); save(); go(); $('#home').click(); };
 }
 function screenStash() {

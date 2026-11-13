@@ -6,6 +6,7 @@ function canEquip(h, name) {
 }
 function partyGear() {
   return `<h2>Party &amp; Gear</h2><p class="sub">Equip one melee and one ranged weapon, armour and a shield. Learn scrolls and fill your spellbook. Drag a hero's card by any empty space to change the marching order: monsters favour the front two.</p>
+  ${S.loc === 'camp' ? '' : `<p class="supplies"><b>${suppliesText()}.</b> ${supplies() ? 'Each camp where the party rests uses one.' : 'The party cannot rest in camp without them. They are sometimes found after a battle is won.'}</p>`}
   <div class="pcards">${S.party.map((h, i) => {
     const b = bookFor(h.cls, h.level);
     const slots = ['melee', 'ranged', 'armour', 'shield'].map(k => {

@@ -199,6 +199,25 @@ async def main():
         check('a monster killed by a Double Strike greys out only after the dice add up', G['early'] == 0 and G['dead'], f"{G['early']} early moments")
         await pg.evaluate("S.battle = null")
 
+        # Build 120: Supplies for camp. 5% after the first win, +5% a win, certain on the 20th, back to 5% after a find;
+        # no supplies means no rest; the first rest in a camp uses one; leaving camp while wounded asks first.
+        R = await pg.evaluate("""(() => { const r = Math.random, out = {};
+          S.supplies = 0; S.supplyN = 0; Math.random = () => .999; for (let i = 0; i < 19; i++) rollSupplies();
+          out.n19 = S.supplyN; out.s19 = S.supplies; rollSupplies(); out.s20 = S.supplies; out.n20 = S.supplyN;
+          Math.random = () => .04; rollSupplies(); out.first = S.supplies; Math.random = r;
+          S.supplies = 0; S.battle = null; S.loc = 'wild'; S.party.forEach(h => { h.dead = false; h.hp = h.max; }); enterCamp();
+          out.blocked = document.querySelector('#rest').disabled;
+          S.supplies = 2; screenCamp(); document.querySelector('#rest').click(); out.after = [S.supplies, S.campLit, S.rest.on];
+          S.rest.on = false; screenCamp(); S.party[0].hp = 1; document.querySelector('#leave').click();
+          out.warn = !!document.querySelector('#wwGo'); document.querySelector('#wwGo').click();
+          out.left = [S.loc, S.campLit]; S.party[0].hp = S.party[0].max; return out; })()""")
+        check('Supplies for camp: 100% on the 20th win, then back to 5%', R['n19'] == 19 and R['s19'] == 0 and R['s20'] == 1 and R['n20'] == 0 and R['first'] == 2, str(R))
+        check('no supplies means no rest; the first rest uses one; leaving while wounded warns first',
+              R['blocked'] and R['after'] == [1, True, True] and R['warn'] and R['left'] == ['wild', False], str(R))
+        await pg.evaluate("go()"); await pg.wait_for_timeout(300)
+        S2 = await pg.evaluate("(() => { S.loc = 'castle'; S.supplies = 3; return partyGear(); })()")
+        check('Party & Gear shows the supplies count', 'Enough supplies for 3 camps' in S2)
+
         # Build 118: a damage spell's cry and cast sound come after its dice have landed, never while they roll
         for sp in ['Magic Missile', 'Fireball', 'Lightning Bolt']:
             await pg.evaluate("""(sp) => { S.loc = 'wild'; S.party.forEach(h => { h.dead = false; h.hp = h.max; h.status = {}; });

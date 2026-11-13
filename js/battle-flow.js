@@ -115,9 +115,10 @@ function victory() {
     }
   });
   S.gold += gold;
+  const sup = rollSupplies();   // Build 120: Supplies for camp, rolled on its own after every won battle
   if (S.dev && S.dev.freeSpells) restoreSpells();   // developer cheat: spells refresh after every battle
   S.party.forEach(h => { if (h.drained) { h.st.STR += h.drained; h.drained = 0; } ['SLEEP', 'ENTANGLED', 'SHOCK', 'WARD', 'RESIST', 'RANGE'].forEach(k => delete h.status[k]); });
-  const res = `<div class="sys">Victory. ${lines.join(' · ')}</div>${gold ? `<div class="hit">Found ${gold} GP.</div>` : ''}${found.length ? `<div class="hit">Found: ${found.join(', ')}.</div>` : ''}${ups.map(u => `<div class="crit">${u}</div>`).join('')}`;
+  const res = `<div class="sys">Victory. ${lines.join(' · ')}</div>${gold ? `<div class="hit">Found ${gold} GP.</div>` : ''}${found.length ? `<div class="hit">Found: ${found.join(', ')}.</div>` : ''}${sup ? `<div class="hit">Found supplies for camp. ${suppliesText()}.</div>` : ''}${ups.map(u => `<div class="crit">${u}</div>`).join('')}`;
   let bossTxt = '';
   S.events = S.events || {};
   if (B.boss === 'warlord') {
@@ -137,7 +138,7 @@ function victory() {
   }
   S.lastResult = res; S.battle = null; scheduleEnc(); save();
   const back = S.returning; S.returning = false;
-  xpRise(before, () => modal(`<h2>Victory</h2>${bossTxt}<div style="display:grid;gap:4px">${lines.map(l => `<div>${l}</div>`).join('')}${gold ? `<div><b>${gold} GP</b> collected.</div>` : ''}${found.length ? `<div class="row">Loot: ${found.map(n => img(n) + ' ' + n).join(', ')}</div>` : ''}${ups.map(u => `<div><b>${u}</b></div>`).join('')}</div><div class="row" style="margin-top:12px"><button class="btn red" data-close>${back ? 'Continue to the castle' : 'Onward'}</button></div>`,
+  xpRise(before, () => modal(`<h2>Victory</h2>${bossTxt}<div style="display:grid;gap:4px">${lines.map(l => `<div>${l}</div>`).join('')}${gold ? `<div><b>${gold} GP</b> collected.</div>` : ''}${found.length ? `<div class="row">Loot: ${found.map(n => img(n) + ' ' + n).join(', ')}</div>` : ''}${sup ? `<div><b>Supplies for camp</b> found. ${suppliesText()}.</div>` : ''}${ups.map(u => `<div><b>${u}</b></div>`).join('')}</div><div class="row" style="margin-top:12px"><button class="btn red" data-close>${back ? 'Continue to the castle' : 'Onward'}</button></div>`,
     () => { if (back) { S.loc = 'castle'; castleTab = 'square'; restAll(); } save(); go(); }));
 }
 /* Build 117 (Tom's feedback): after a win each hero's XP bar fills gradually instead of snapping. On a level up the
